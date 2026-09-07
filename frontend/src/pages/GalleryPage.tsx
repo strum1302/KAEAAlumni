@@ -4,6 +4,7 @@ import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import { galleryApi, eventsApi } from '../api'
 import { useAuthStore } from '../store/authStore'
+import { getYouTubeThumbnail } from '../utils/youtube'
 import Pagination from '../components/common/Pagination'
 import type { EventList, GalleryItem, PagedResult } from '../types'
 
@@ -70,22 +71,30 @@ export default function GalleryPage() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {data?.items.map((item) => (
-          <button key={item.id} onClick={() => setSelected(item)} className="text-left group">
-            <div className="rounded-xl overflow-hidden bg-gray-100 aspect-square relative">
-              {item.mediaType === 'PHOTO' ? (
-                <img src={item.mediaUrl} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white">▶</div>
-              )}
-              <span className="absolute top-2 left-2 text-[10px] bg-black/60 text-white px-2 py-0.5 rounded">
-                {item.mediaType === 'PHOTO' ? '사진' : '영상'}
-              </span>
-            </div>
-            <p className="text-sm text-gray-700 mt-1.5 truncate">{item.title}</p>
-            <p className="text-xs text-gray-400">{format(new Date(item.createdAt), 'yyyy.MM.dd')}</p>
-          </button>
-        ))}
+        {data?.items.map((item) => {
+          const videoThumb = item.mediaType === 'VIDEO' ? (item.thumbnailUrl || getYouTubeThumbnail(item.mediaUrl)) : null
+          return (
+            <button key={item.id} onClick={() => setSelected(item)} className="text-left group">
+              <div className="rounded-xl overflow-hidden bg-gray-100 aspect-square relative">
+                {item.mediaType === 'PHOTO' ? (
+                  <img src={item.mediaUrl} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                ) : videoThumb ? (
+                  <>
+                    <img src={videoThumb} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/25 text-white text-2xl">▶</div>
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white">▶</div>
+                )}
+                <span className="absolute top-2 left-2 text-[10px] bg-black/60 text-white px-2 py-0.5 rounded">
+                  {item.mediaType === 'PHOTO' ? '사진' : '영상'}
+                </span>
+              </div>
+              <p className="text-sm text-gray-700 mt-1.5 truncate">{item.title}</p>
+              <p className="text-xs text-gray-400">{format(new Date(item.createdAt), 'yyyy.MM.dd')}</p>
+            </button>
+          )
+        })}
         {!data?.items.length && <p className="text-sm text-gray-400 col-span-4">등록된 미디어가 없습니다.</p>}
       </div>
 
@@ -196,9 +205,29 @@ function AddGalleryModal({ onClose, onCreated }: { onClose: () => void; onCreate
             onChange={(e) => setForm({ ...form, mediaUrl: e.target.value })}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
           {form.mediaType === 'VIDEO' && (
-            <input placeholder="썸네일 이미지 URL (선택)" value={form.thumbnailUrl}
-              onChange={(e) => setForm({ ...form, thumbnailUrl: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            <div className="space-y-2">
+              <input
+                placeholder="썸네일 이미지 URL (선택 — YouTube 링크는 자동으로 생성됩니다)"
+                value={form.thumbnailUrl}
+                onChange={(e) => setForm({ ...form, thumbnailUrl: e.target.value })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              />
+              {(() => {
+                const preview = form.thumbnailUrl || getYouTubeThumbnail(form.mediaUrl)
+                return preview ? (
+                  <div className="flex items-center gap-2">
+                    <img src={preview} alt="썸네일 미리보기" className="w-20 h-14 object-cover rounded border border-gray-200" />
+                    <span className="text-xs text-gray-400">
+                      {form.thumbnailUrl ? '직접 입력한 썸네일' : 'YouTube에서 자동 생성된 썸네일'}
+                    </span>
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400">
+                    YouTube 링크를 입력하면 썸네일이 자동으로 표시됩니다. 다른 영상 사이트는 썸네일 URL을 직접 입력해주세요.
+                  </p>
+                )
+              })()}
+            </div>
           )}
           <textarea placeholder="설명 (선택)" value={form.description} rows={2}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
