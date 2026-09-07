@@ -25,6 +25,7 @@ public class AppDbContext : DbContext
             e.HasIndex(m => m.Email).IsUnique();
             e.HasIndex(m => m.EntryYear);
             e.HasIndex(m => m.Name);
+            e.Property(m => m.Id).HasColumnName("id");
             e.Property(m => m.Name).HasColumnName("name").HasMaxLength(100);
             e.Property(m => m.Email).HasColumnName("email").HasMaxLength(255);
             e.Property(m => m.CellPhone).HasColumnName("cell_phone").HasMaxLength(50);
@@ -51,6 +52,7 @@ public class AppDbContext : DbContext
         {
             e.ToTable("events");
             e.HasIndex(ev => ev.EventDate);
+            e.Property(ev => ev.Id).HasColumnName("id");
             e.Property(ev => ev.Title).HasColumnName("title").HasMaxLength(200);
             e.Property(ev => ev.Description).HasColumnName("description");
             e.Property(ev => ev.EventDate).HasColumnName("event_date");
@@ -70,6 +72,7 @@ public class AppDbContext : DbContext
                 .HasForeignKey(r => r.EventId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(r => r.Member).WithMany(m => m.EventRsvps)
                 .HasForeignKey(r => r.MemberId).OnDelete(DeleteBehavior.SetNull);
+            e.Property(r => r.Id).HasColumnName("id");
             e.Property(r => r.EventId).HasColumnName("event_id");
             e.Property(r => r.MemberId).HasColumnName("member_id");
             e.Property(r => r.GuestName).HasColumnName("guest_name").HasMaxLength(100);
@@ -87,6 +90,7 @@ public class AppDbContext : DbContext
         {
             e.ToTable("articles");
             e.HasIndex(a => a.Category);
+            e.Property(a => a.Id).HasColumnName("id");
             e.Property(a => a.Category).HasColumnName("category").HasMaxLength(50).HasConversion<string>();
             e.Property(a => a.Title).HasColumnName("title").HasMaxLength(255);
             e.Property(a => a.Content).HasColumnName("content");
@@ -106,6 +110,7 @@ public class AppDbContext : DbContext
                 .HasForeignKey(g => g.EventId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(g => g.Article).WithMany(a => a.GalleryItems)
                 .HasForeignKey(g => g.ArticleId).OnDelete(DeleteBehavior.Cascade);
+            e.Property(g => g.Id).HasColumnName("id");
             e.Property(g => g.EventId).HasColumnName("event_id");
             e.Property(g => g.ArticleId).HasColumnName("article_id");
             e.Property(g => g.Title).HasColumnName("title").HasMaxLength(255);
@@ -127,6 +132,7 @@ public class AppDbContext : DbContext
             e.HasIndex(p => p.PaymentDate);
             e.HasOne(p => p.Member).WithMany(m => m.Payments)
                 .HasForeignKey(p => p.MemberId).OnDelete(DeleteBehavior.Cascade);
+            e.Property(p => p.Id).HasColumnName("id");
             e.Property(p => p.MemberId).HasColumnName("member_id");
             e.Property(p => p.PaymentType).HasColumnName("payment_type").HasMaxLength(50).HasConversion<string>();
             e.Property(p => p.TargetYear).HasColumnName("target_year");
