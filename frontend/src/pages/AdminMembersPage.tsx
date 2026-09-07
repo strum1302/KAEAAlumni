@@ -152,7 +152,7 @@ export default function AdminMembersPage() {
   const handlePhotoChange = async (targetMember: MemberRow, file: File) => {
     setUploadingPhotoId(targetMember.id)
     try {
-      const dataUrl = await fileToResizedDataUrl(file)
+      const dataUrl = await fileToResizedDataUrl(file, 200, 400)
       await membersApi.updatePhoto(targetMember.id, dataUrl)
       toast.success(`${targetMember.name} 님의 사진이 업데이트되었습니다.`)
       queryClient.invalidateQueries({ queryKey: ['members', 'all'] })
@@ -234,9 +234,9 @@ export default function AdminMembersPage() {
                 <td className="px-4 py-2">
                   <div className="flex items-center gap-2">
                     {m.photoUrl ? (
-                      <img src={m.photoUrl} alt={m.name} className="w-8 h-8 rounded-full object-cover" />
+                      <img src={m.photoUrl} alt={m.name} className="w-6 h-10 rounded object-cover" />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-[10px] text-gray-400">
+                      <div className="w-6 h-10 rounded bg-gray-200 flex items-center justify-center text-[10px] text-gray-400">
                         {m.name.slice(0, 1)}
                       </div>
                     )}

@@ -48,6 +48,7 @@ export default function AboutPage() {
     queryKey: ['members', 'officers'],
     queryFn: async () => (await membersApi.getOfficers()).data as Officer[],
   })
+  const president = officers?.find((o) => o.officerTitle === '회장')
 
   const { data: historyList } = useQuery({
     queryKey: ['articles', 'HISTORY'],
@@ -94,6 +95,15 @@ export default function AboutPage() {
     <div className="space-y-10">
       <section>
         <h1 className="text-2xl font-bold text-gray-800 mb-3">교우회 소개</h1>
+        {president?.photoUrl && (
+          <div className="flex justify-center mb-4">
+            <img
+              src={president.photoUrl}
+              alt={president.name}
+              className="max-w-full h-auto rounded-lg border border-gray-100"
+            />
+          </div>
+        )}
         <div className="bg-white border border-gray-100 rounded-xl p-6 space-y-3">
           <h2 className="font-bold text-crimson">회장 인사말</h2>
           <p className="text-sm text-gray-600 leading-relaxed">
@@ -107,17 +117,17 @@ export default function AboutPage() {
 
       <section>
         <h2 className="text-lg font-bold text-gray-800 mb-3">임원진 조직도</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+        <div className="flex flex-wrap justify-center gap-4">
           {sortOfficers(officers ?? []).map((o) => (
-            <div key={o.id} className="bg-white border border-gray-100 rounded-xl p-4 text-center">
+            <div key={o.id} className="bg-white border border-gray-100 rounded-xl p-4 text-center w-[200px]">
               {o.photoUrl ? (
                 <img
                   src={o.photoUrl}
                   alt={o.name}
-                  className="w-16 h-16 rounded-full object-cover mx-auto mb-2 border border-gray-100"
+                  className="w-[200px] h-[400px] object-cover rounded-lg mx-auto mb-2"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-full bg-crimson-50 text-crimson font-bold flex items-center justify-center mx-auto mb-2">
+                <div className="w-[200px] h-[400px] rounded-lg bg-crimson-50 text-crimson font-bold text-4xl flex items-center justify-center mx-auto mb-2">
                   {o.name.slice(0, 1)}
                 </div>
               )}
@@ -126,7 +136,7 @@ export default function AboutPage() {
             </div>
           ))}
           {!officers?.length && (
-            <p className="col-span-full text-sm text-gray-400 text-center py-4">
+            <p className="text-sm text-gray-400 text-center py-4">
               등록된 임원 정보가 없습니다.
               {isAdmin && ' 교우 권한 관리 페이지에서 회원의 임원 직책을 지정할 수 있습니다.'}
             </p>
