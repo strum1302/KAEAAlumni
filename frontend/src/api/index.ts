@@ -58,6 +58,7 @@ export const membersApi = {
   updateOfficerTitle: (id: string, officerTitle: string | null) =>
     api.put(`/members/${id}/officer-title`, { officerTitle }),
   setActive: (id: string, isActive: boolean) => api.put(`/members/${id}/active`, { isActive }),
+  updatePhoto: (id: string, photoUrl: string | null) => api.put(`/members/${id}/photo`, { photoUrl }),
 }
 
 // ── Events API ────────────────────────────────────

@@ -30,7 +30,7 @@ public class MembersController : ControllerBase
             member.Id, member.Name, member.Email, member.EntryYear, member.Major,
             member.Degree, member.CellPhone, member.HomePhone, member.AddressLine1,
             member.AddressLine2, member.City, member.State, member.ZipCode,
-            member.Bio, member.Role.ToString(), member.OfficerTitle));
+            member.Bio, member.Role.ToString(), member.OfficerTitle, member.PhotoUrl));
     }
 
     // 내 정보 수정
@@ -66,7 +66,7 @@ public class MembersController : ControllerBase
             .Select(m => new
             {
                 m.Id, m.Name, m.Email, m.EntryYear, m.Major, m.Degree,
-                m.City, m.State, Role = m.Role.ToString(), m.OfficerTitle, m.IsActive, m.CreatedAt
+                m.City, m.State, Role = m.Role.ToString(), m.OfficerTitle, m.IsActive, m.PhotoUrl, m.CreatedAt
             });
         return Ok(result);
     }
@@ -79,7 +79,7 @@ public class MembersController : ControllerBase
             m => m.OfficerTitle != null && m.OfficerTitle != "" && m.IsActive);
         var result = officers.Select(m => new
         {
-            m.Id, m.Name, m.EntryYear, m.Major, m.OfficerTitle
+            m.Id, m.Name, m.EntryYear, m.Major, m.OfficerTitle, m.PhotoUrl
         });
         return Ok(result);
     }
@@ -133,5 +133,18 @@ public class MembersController : ControllerBase
             ? $"{member.Name} 님이 다시 활성화되었습니다."
             : $"{member.Name} 님의 등록이 취소되었습니다.";
         return Ok(new { message });
+    }
+
+    // 프로필 사진 등록/변경 (Admin 전용) - PhotoUrl이 비어있으면 사진 제거
+    [Authorize(Roles = "ADMIN")]
+    [HttpPut("{id}/photo")]
+    public async Task<IActionResult> UpdatePhoto(Guid id, [FromBody] UpdateMemberPhotoDto dto)
+    {
+        var member = await _memberRepo.GetByIdAsync(id)
+            ?? throw new KeyNotFoundException("회원을 찾을 수 없습니다.");
+
+        member.PhotoUrl = string.IsNullOrWhiteSpace(dto.PhotoUrl) ? null : dto.PhotoUrl;
+        await _memberRepo.SaveChangesAsync();
+        return Ok(new { message = $"{member.Name} 님의 사진이 업데이트되었습니다." });
     }
 }

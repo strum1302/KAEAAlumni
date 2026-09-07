@@ -23,6 +23,7 @@ public class Member : BaseEntity
     public string? Bio { get; set; }               // 교우회 메모
     public string? OfficerTitle { get; set; }      // 임원 직책 (회장/부회장/총무/회계/YT회장 등, 없으면 null)
     public bool IsActive { get; set; } = true;     // false = 등록 취소(soft delete). 실제 행은 삭제하지 않음.
+    public string? PhotoUrl { get; set; }          // 프로필 사진 (base64 data URL 또는 외부 이미지 URL). 없으면 null.
 
     // ── 인증(auth) 확장 컬럼 ──
     // schema.sql의 members 테이블에는 없는 컬럼입니다. ASP.NET Core 자체 JWT 로그인을

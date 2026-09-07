@@ -45,7 +45,8 @@ public record MemberDto(
     string? ZipCode,
     string? Bio,
     string Role,
-    string? OfficerTitle = null
+    string? OfficerTitle = null,
+    string? PhotoUrl = null
 );
 
 public record RefreshTokenDto(string RefreshToken);
@@ -55,6 +56,8 @@ public record UpdateMemberRoleDto(string Role);
 public record UpdateMemberOfficerTitleDto(string? OfficerTitle);
 
 public record UpdateMemberActiveDto(bool IsActive);
+
+public record UpdateMemberPhotoDto(string? PhotoUrl);
 
 public record UpdateMemberProfileDto(
     string CellPhone,

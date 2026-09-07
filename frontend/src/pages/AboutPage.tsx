@@ -110,6 +110,17 @@ export default function AboutPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
           {sortOfficers(officers ?? []).map((o) => (
             <div key={o.id} className="bg-white border border-gray-100 rounded-xl p-4 text-center">
+              {o.photoUrl ? (
+                <img
+                  src={o.photoUrl}
+                  alt={o.name}
+                  className="w-16 h-16 rounded-full object-cover mx-auto mb-2 border border-gray-100"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-crimson-50 text-crimson font-bold flex items-center justify-center mx-auto mb-2">
+                  {o.name.slice(0, 1)}
+                </div>
+              )}
               <p className="text-xs text-crimson font-semibold mb-1">{o.officerTitle}</p>
               <p className="text-sm text-gray-700">{o.name} ({o.entryYear} {o.major})</p>
             </div>

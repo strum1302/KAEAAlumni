@@ -152,6 +152,10 @@ ALTER TABLE members ADD COLUMN IF NOT EXISTS officer_title VARCHAR(50);
 -- false인 회원은 로그인이 차단되고, 기본 회원 목록/임원진 목록에서 제외됩니다.
 ALTER TABLE members ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
 
+-- 프로필 사진. 별도 파일 스토리지 없이 관리자 페이지에서 업로드한 이미지를
+-- (리사이즈 후) base64 data URL 형태로 그대로 저장합니다. NULL이면 사진 없음.
+ALTER TABLE members ADD COLUMN IF NOT EXISTS photo_url TEXT;
+
 -- ------------------------------------------------------------------------------
 -- 7. 테스트용 시드 데이터 (Seed Data)
 -- ------------------------------------------------------------------------------

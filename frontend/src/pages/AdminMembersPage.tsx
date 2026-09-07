@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import { membersApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import { useSort } from '../hooks/useSort'
+import { fileToResizedDataUrl } from '../utils/image'
 import Pagination from '../components/common/Pagination'
 import SortableTh from '../components/common/SortableTh'
 import type { MemberRole } from '../types'
@@ -22,6 +23,7 @@ interface MemberRow {
   role: MemberRole
   officerTitle?: string | null
   isActive: boolean
+  photoUrl?: string | null
   createdAt: string
 }
 
@@ -46,6 +48,7 @@ export default function AdminMembersPage() {
   const [savingId, setSavingId] = useState<string | null>(null)
   const [savingOfficerId, setSavingOfficerId] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [uploadingPhotoId, setUploadingPhotoId] = useState<string | null>(null)
   const [includeInactive, setIncludeInactive] = useState(false)
   const [page, setPage] = useState(1)
 
@@ -146,6 +149,38 @@ export default function AdminMembersPage() {
     }
   }
 
+  const handlePhotoChange = async (targetMember: MemberRow, file: File) => {
+    setUploadingPhotoId(targetMember.id)
+    try {
+      const dataUrl = await fileToResizedDataUrl(file)
+      await membersApi.updatePhoto(targetMember.id, dataUrl)
+      toast.success(`${targetMember.name} 님의 사진이 업데이트되었습니다.`)
+      queryClient.invalidateQueries({ queryKey: ['members', 'all'] })
+      queryClient.invalidateQueries({ queryKey: ['members', 'officers'] })
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || err?.message || '사진 업로드에 실패했습니다.')
+    } finally {
+      setUploadingPhotoId(null)
+    }
+  }
+
+  const handleRemovePhoto = async (targetMember: MemberRow) => {
+    const confirmed = window.confirm(`${targetMember.name} 님의 사진을 삭제하시겠습니까?`)
+    if (!confirmed) return
+
+    setUploadingPhotoId(targetMember.id)
+    try {
+      await membersApi.updatePhoto(targetMember.id, null)
+      toast.success('사진이 삭제되었습니다.')
+      queryClient.invalidateQueries({ queryKey: ['members', 'all'] })
+      queryClient.invalidateQueries({ queryKey: ['members', 'officers'] })
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || '삭제에 실패했습니다.')
+    } finally {
+      setUploadingPhotoId(null)
+    }
+  }
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
@@ -176,9 +211,10 @@ export default function AdminMembersPage() {
       </div>
 
       <div className="bg-white border border-gray-100 rounded-xl overflow-x-auto">
-        <table className="w-full text-sm min-w-[820px]">
+        <table className="w-full text-sm min-w-[920px]">
           <thead className="bg-gray-50 text-gray-500">
             <tr>
+              <th className="text-left px-4 py-2">사진</th>
               <SortableTh label="성명" active={sortKey === 'name'} direction={direction} onClick={() => toggleSort('name')} />
               <SortableTh label="이메일" active={sortKey === 'email'} direction={direction} onClick={() => toggleSort('email')} />
               <SortableTh label="학번/과" active={sortKey === 'entryYear'} direction={direction} onClick={() => toggleSort('entryYear')} />
@@ -191,10 +227,43 @@ export default function AdminMembersPage() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {isLoading && (
-              <tr><td colSpan={8} className="px-4 py-6 text-center text-gray-400">불러오는 중...</td></tr>
+              <tr><td colSpan={9} className="px-4 py-6 text-center text-gray-400">불러오는 중...</td></tr>
             )}
             {!isLoading && paged.map((m) => (
               <tr key={m.id} className={m.isActive ? '' : 'bg-gray-50 text-gray-400'}>
+                <td className="px-4 py-2">
+                  <div className="flex items-center gap-2">
+                    {m.photoUrl ? (
+                      <img src={m.photoUrl} alt={m.name} className="w-8 h-8 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-[10px] text-gray-400">
+                        {m.name.slice(0, 1)}
+                      </div>
+                    )}
+                    <label
+                      className={`text-xs hover:underline whitespace-nowrap ${
+                        uploadingPhotoId === m.id ? 'opacity-50 pointer-events-none text-gray-400' : 'text-crimson cursor-pointer'
+                      }`}
+                    >
+                      {uploadingPhotoId === m.id ? '처리 중...' : m.photoUrl ? '변경' : '업로드'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          e.target.value = ''
+                          if (file) handlePhotoChange(m, file)
+                        }}
+                      />
+                    </label>
+                    {m.photoUrl && uploadingPhotoId !== m.id && (
+                      <button onClick={() => handleRemovePhoto(m)} className="text-xs text-gray-400 hover:text-red-500">
+                        삭제
+                      </button>
+                    )}
+                  </div>
+                </td>
                 <td className="px-4 py-2 whitespace-nowrap">
                   {m.name}
                   {m.id === currentMember?.id && (
@@ -256,7 +325,7 @@ export default function AdminMembersPage() {
               </tr>
             ))}
             {!isLoading && !filtered.length && (
-              <tr><td colSpan={8} className="px-4 py-6 text-center text-gray-400">검색 결과가 없습니다.</td></tr>
+              <tr><td colSpan={9} className="px-4 py-6 text-center text-gray-400">검색 결과가 없습니다.</td></tr>
             )}
           </tbody>
         </table>

@@ -18,6 +18,7 @@ export interface Member {
   bio?: string
   role: MemberRole
   officerTitle?: string
+  photoUrl?: string | null
 }
 
 export interface Officer {
@@ -26,6 +27,7 @@ export interface Officer {
   entryYear: number
   major: string
   officerTitle: string
+  photoUrl?: string | null
 }
 
 export interface AuthResponse {
