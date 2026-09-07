@@ -121,13 +121,15 @@ export default function AboutPage() {
           {sortOfficers(officers ?? []).map((o) => (
             <div key={o.id} className="bg-white border border-gray-100 rounded-xl p-4 text-center w-[200px]">
               {o.photoUrl ? (
-                <img
-                  src={o.photoUrl}
-                  alt={o.name}
-                  className="w-full max-w-[200px] h-auto rounded-lg mx-auto mb-2"
-                />
+                <div className="w-[200px] h-[250px] rounded-lg bg-gray-50 flex items-center justify-center mx-auto mb-2 overflow-hidden">
+                  <img
+                    src={o.photoUrl}
+                    alt={o.name}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
               ) : (
-                <div className="w-[200px] h-[200px] rounded-lg bg-crimson-50 text-crimson font-bold text-4xl flex items-center justify-center mx-auto mb-2">
+                <div className="w-[200px] h-[250px] rounded-lg bg-crimson-50 text-crimson font-bold text-4xl flex items-center justify-center mx-auto mb-2">
                   {o.name.slice(0, 1)}
                 </div>
               )}
