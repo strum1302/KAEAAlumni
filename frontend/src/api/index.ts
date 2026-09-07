@@ -96,8 +96,9 @@ export const galleryApi = {
   }) => api.get('/gallery', { params }),
   create: (data: {
     title: string; description?: string; mediaType: string; mediaUrl: string
-    thumbnailUrl?: string; eventId?: string; articleId?: string
+    thumbnailUrl?: string; eventId?: string; articleId?: string; displayOrder?: number
   }) => api.post('/gallery', data),
+  updateOrder: (id: string, displayOrder: number) => api.put(`/gallery/${id}/order`, { displayOrder }),
   delete: (id: string) => api.delete(`/gallery/${id}`),
 }
 

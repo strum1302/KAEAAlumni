@@ -56,11 +56,25 @@ public class GalleryController : ControllerBase
             MediaUrl = dto.MediaUrl,
             ThumbnailUrl = dto.ThumbnailUrl,
             EventId = dto.EventId,
-            ArticleId = dto.ArticleId
+            ArticleId = dto.ArticleId,
+            DisplayOrder = dto.DisplayOrder
         };
         await _galleryRepo.AddAsync(item);
         await _galleryRepo.SaveChangesAsync();
         return Ok(new { id = item.Id });
+    }
+
+    // 정렬 순서 변경 (예: 교가를 맨 앞으로 고정)
+    [Authorize(Roles = "OFFICER,ADMIN")]
+    [HttpPut("{id}/order")]
+    public async Task<IActionResult> UpdateOrder(Guid id, [FromBody] UpdateGalleryItemOrderDto dto)
+    {
+        var item = await _galleryRepo.GetByIdAsync(id);
+        if (item == null) return NotFound();
+
+        item.DisplayOrder = dto.DisplayOrder;
+        await _galleryRepo.SaveChangesAsync();
+        return Ok(new { message = "정렬 순서가 변경되었습니다." });
     }
 
     [Authorize(Roles = "OFFICER,ADMIN")]

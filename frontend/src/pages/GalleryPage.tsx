@@ -74,25 +74,28 @@ export default function GalleryPage() {
         {data?.items.map((item) => {
           const videoThumb = item.mediaType === 'VIDEO' ? (item.thumbnailUrl || getYouTubeThumbnail(item.mediaUrl)) : null
           return (
-            <button key={item.id} onClick={() => setSelected(item)} className="text-left group">
-              <div className="rounded-xl overflow-hidden bg-gray-100 aspect-square relative">
-                {item.mediaType === 'PHOTO' ? (
-                  <img src={item.mediaUrl} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                ) : videoThumb ? (
-                  <>
-                    <img src={videoThumb} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/25 text-white text-2xl">▶</div>
-                  </>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white">▶</div>
-                )}
-                <span className="absolute top-2 left-2 text-[10px] bg-black/60 text-white px-2 py-0.5 rounded">
-                  {item.mediaType === 'PHOTO' ? '사진' : '영상'}
-                </span>
-              </div>
-              <p className="text-sm text-gray-700 mt-1.5 truncate">{item.title}</p>
-              <p className="text-xs text-gray-400">{format(new Date(item.createdAt), 'yyyy.MM.dd')}</p>
-            </button>
+            <div key={item.id} className="group">
+              <button onClick={() => setSelected(item)} className="text-left w-full block">
+                <div className="rounded-xl overflow-hidden bg-gray-100 aspect-square relative">
+                  {item.mediaType === 'PHOTO' ? (
+                    <img src={item.mediaUrl} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                  ) : videoThumb ? (
+                    <>
+                      <img src={videoThumb} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/25 text-white text-2xl">▶</div>
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white">▶</div>
+                  )}
+                  <span className="absolute top-2 left-2 text-[10px] bg-black/60 text-white px-2 py-0.5 rounded">
+                    {item.mediaType === 'PHOTO' ? '사진' : '영상'}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-700 mt-1.5 truncate">{item.title}</p>
+                <p className="text-xs text-gray-400">{format(new Date(item.createdAt), 'yyyy.MM.dd')}</p>
+              </button>
+              {canManage && <GalleryItemAdminControls item={item} onDelete={() => handleDelete(item)} deleting={deleting} />}
+            </div>
           )
         })}
         {!data?.items.length && <p className="text-sm text-gray-400 col-span-4">등록된 미디어가 없습니다.</p>}
@@ -141,11 +144,60 @@ export default function GalleryPage() {
   )
 }
 
+// 그리드 카드에서 바로 정렬 순서를 바꾸고 삭제할 수 있는 관리자용 컨트롤
+// (기존에는 항목을 눌러 라이트박스를 연 뒤에만 삭제가 가능했음)
+function GalleryItemAdminControls({
+  item, onDelete, deleting,
+}: { item: GalleryItem; onDelete: () => void; deleting: boolean }) {
+  const queryClient = useQueryClient()
+  const [order, setOrder] = useState(item.displayOrder)
+  const [saving, setSaving] = useState(false)
+
+  const saveOrder = async () => {
+    setSaving(true)
+    try {
+      await galleryApi.updateOrder(item.id, order)
+      toast.success('정렬 순서가 변경되었습니다.')
+      queryClient.invalidateQueries({ queryKey: ['gallery'] })
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || '변경에 실패했습니다.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-1 mt-1.5">
+      <input
+        type="number"
+        value={order}
+        onChange={(e) => setOrder(Number(e.target.value))}
+        title="정렬 순서 (작을수록 먼저 표시됩니다)"
+        className="w-14 border border-gray-300 rounded px-1.5 py-1 text-xs"
+      />
+      <button
+        onClick={saveOrder}
+        disabled={saving || order === item.displayOrder}
+        className="text-xs text-crimson font-medium px-2 py-1 rounded hover:bg-crimson-50 disabled:opacity-40 disabled:hover:bg-transparent"
+      >
+        {saving ? '저장 중...' : '순서저장'}
+      </button>
+      <button
+        onClick={onDelete}
+        disabled={deleting}
+        className="text-xs text-red-500 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50 disabled:opacity-50 ml-auto"
+      >
+        삭제
+      </button>
+    </div>
+  )
+}
+
 function AddGalleryModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [events, setEvents] = useState<EventList[]>([])
   const [form, setForm] = useState({
     title: '', description: '', mediaType: 'VIDEO' as 'PHOTO' | 'VIDEO',
-    mediaUrl: '', thumbnailUrl: '', eventId: '',
+    mediaUrl: '', thumbnailUrl: '', eventId: '', displayOrder: 0,
   })
   const [saving, setSaving] = useState(false)
 
@@ -166,6 +218,7 @@ function AddGalleryModal({ onClose, onCreated }: { onClose: () => void; onCreate
         mediaUrl: form.mediaUrl,
         thumbnailUrl: form.thumbnailUrl || undefined,
         eventId: form.eventId || undefined,
+        displayOrder: form.displayOrder,
       })
       toast.success('등록되었습니다.')
       onCreated()
@@ -232,6 +285,17 @@ function AddGalleryModal({ onClose, onCreated }: { onClose: () => void; onCreate
           <textarea placeholder="설명 (선택)" value={form.description} rows={2}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">
+              정렬 순서 (작을수록 먼저 표시됩니다. 예: 교가는 0)
+            </label>
+            <input
+              type="number"
+              value={form.displayOrder}
+              onChange={(e) => setForm({ ...form, displayOrder: Number(e.target.value) })}
+              className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            />
+          </div>
           <div className="flex gap-2 pt-2">
             <button type="button" onClick={onClose} className="flex-1 border border-gray-300 rounded-lg py-2 text-sm">취소</button>
             <button type="submit" disabled={saving}

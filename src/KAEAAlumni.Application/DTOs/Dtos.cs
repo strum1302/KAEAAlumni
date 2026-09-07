@@ -131,7 +131,12 @@ public record CreateGalleryItemDto(
     string MediaUrl,
     string? ThumbnailUrl,
     Guid? EventId,
-    Guid? ArticleId
+    Guid? ArticleId,
+    int DisplayOrder = 0   // 낮을수록 먼저 표시 (예: 교가는 0)
+);
+
+public record UpdateGalleryItemOrderDto(
+    int DisplayOrder
 );
 
 // ── Payment ─────────────────────────────────────────────
