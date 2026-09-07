@@ -1,0 +1,7 @@
+**/bin/
+**/obj/
+frontend/
+tests/
+.git/
+.vs/
+*.md
