@@ -33,9 +33,10 @@ public enum MediaType
 // ── 수납/재정 (payments.payment_type) ────────────────────
 public enum PaymentType
 {
-    MEMBERSHIP_FEE = 0,
+    MEMBERSHIP_FEE = 0,        // 연회비 ($100)
     DONATION = 1,
-    EVENT_FEE = 2
+    EVENT_FEE = 2,
+    MEMBERSHIP_FEE_BOARD = 3   // 연회비+이사회비 ($200)
 }
 
 // ── payments.payment_method ──────────────────────────────

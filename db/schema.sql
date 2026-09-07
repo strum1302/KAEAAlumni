@@ -108,13 +108,14 @@ CREATE INDEX idx_gallery_type ON gallery_items(media_type);
 
 -- ------------------------------------------------------------------------------
 -- 6. 회비 및 도네이션 수납 관리 테이블 (payments)
--- 연회비(MEMBERSHIP_FEE), 도네이션(DONATION), 행사비(EVENT_FEE) 관리
+-- 연회비(MEMBERSHIP_FEE, $100), 연회비+이사회비(MEMBERSHIP_FEE_BOARD, $200),
+-- 도네이션(DONATION), 행사비(EVENT_FEE) 관리
 -- ------------------------------------------------------------------------------
 CREATE TABLE payments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     member_id UUID NOT NULL REFERENCES members(id) ON DELETE CASCADE, -- 납부 교우
 
-    payment_type VARCHAR(50) NOT NULL,          -- MEMBERSHIP_FEE(연회비), DONATION(도네이션), EVENT_FEE(행사비)
+    payment_type VARCHAR(50) NOT NULL,          -- MEMBERSHIP_FEE(연회비), MEMBERSHIP_FEE_BOARD(연회비+이사회비), DONATION(도네이션), EVENT_FEE(행사비)
     target_year INT NOT NULL,                   -- 납부 해당 연도 (예: 2026)
     amount NUMERIC(10, 2) NOT NULL,             -- 납부 금액 (USD)
 

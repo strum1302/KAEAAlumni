@@ -9,7 +9,7 @@ using System.Security.Claims;
 namespace KAEAAlumni.API.Controllers;
 
 // ── 회비 및 도네이션 수납 관리 대시보드 (Payments) ────────
-// 열람: Officer(스스로 제한적), 등록/수정/통계: Admin 전용
+// 열람: Officer 전체, 등록/수정: Admin 및 회계 담당(officerTitle="회계") 임원
 [ApiController]
 [Route("api/[controller]")]
 public class PaymentsController : ControllerBase
@@ -18,6 +18,11 @@ public class PaymentsController : ControllerBase
 
     public PaymentsController(IPaymentRepository paymentRepo)
         => _paymentRepo = paymentRepo;
+
+    // Admin이거나, 임원 직책이 "회계"(회계 담당)인 경우 수납 내역 등록/수정을 허용합니다.
+    // 임원 직책은 역할(Role)과 별개의 값이라 JWT의 OfficerTitle 클레임으로 확인합니다.
+    private bool CanManagePayments()
+        => User.IsInRole("ADMIN") || User.FindFirst("OfficerTitle")?.Value == "회계";
 
     // 내 납부내역 조회 (로그인한 모든 회원) — 라우트 우선순위상 {id} 계열보다 먼저 매칭되도록 위에 배치
     [Authorize]
@@ -71,18 +76,20 @@ public class PaymentsController : ControllerBase
         var summary = new PaymentSummaryDto(
             year,
             payments.Sum(p => p.Amount),
-            payments.Where(p => p.PaymentType == PaymentType.MEMBERSHIP_FEE).Sum(p => p.Amount),
+            payments.Where(p => p.PaymentType is PaymentType.MEMBERSHIP_FEE or PaymentType.MEMBERSHIP_FEE_BOARD).Sum(p => p.Amount),
             payments.Where(p => p.PaymentType == PaymentType.DONATION).Sum(p => p.Amount),
             payments.Where(p => p.PaymentType == PaymentType.EVENT_FEE).Sum(p => p.Amount)
         );
         return Ok(summary);
     }
 
-    // 수납 내역 등록 (Admin 전용)
-    [Authorize(Roles = "ADMIN")]
+    // 수납 내역 등록 (Admin 또는 회계 담당 임원)
+    [Authorize(Roles = "OFFICER,ADMIN")]
     [HttpPost]
     public async Task<IActionResult> CreatePayment([FromBody] CreatePaymentDto dto)
     {
+        if (!CanManagePayments()) return Forbid();
+
         if (!Enum.TryParse<PaymentType>(dto.PaymentType, true, out var paymentType))
             return BadRequest(new { message = "유효하지 않은 납부 구분입니다." });
         if (!Enum.TryParse<PaymentMethod>(dto.PaymentMethod, true, out var paymentMethod))
@@ -107,11 +114,13 @@ public class PaymentsController : ControllerBase
         return Ok(new { id = payment.Id });
     }
 
-    // 수납 내역 수정 (미발행 영수증 처리 등, Admin 전용)
-    [Authorize(Roles = "ADMIN")]
+    // 수납 내역 수정 (미발행 영수증 처리 등, Admin 또는 회계 담당 임원)
+    [Authorize(Roles = "OFFICER,ADMIN")]
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdatePayment(Guid id, [FromBody] UpdatePaymentDto dto)
     {
+        if (!CanManagePayments()) return Forbid();
+
         var payment = await _paymentRepo.GetByIdAsync(id);
         if (payment == null) return NotFound();
 

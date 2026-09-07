@@ -103,7 +103,10 @@ public class AuthService : IAuthService
             new Claim(ClaimTypes.NameIdentifier, member.Id.ToString()),
             new Claim(ClaimTypes.Email, member.Email),
             new Claim(ClaimTypes.Name, member.Name),
-            new Claim(ClaimTypes.Role, member.Role.ToString())
+            new Claim(ClaimTypes.Role, member.Role.ToString()),
+            // 회계 담당(임원 직책 "회계")은 관리자가 아니어도 회비 수납 등록 권한이 필요해
+            // 토큰에 직책을 함께 담아 PaymentsController에서 확인합니다.
+            new Claim("OfficerTitle", member.OfficerTitle ?? "")
         };
 
         var token = new JwtSecurityToken(
@@ -133,7 +136,7 @@ public class AuthService : IAuthService
             member.Id, member.Name, member.Email, member.EntryYear, member.Major,
             member.Degree, member.CellPhone, member.HomePhone, member.AddressLine1,
             member.AddressLine2, member.City, member.State, member.ZipCode,
-            member.Bio, member.Role.ToString()
+            member.Bio, member.Role.ToString(), member.OfficerTitle, member.PhotoUrl
         )
     );
 }

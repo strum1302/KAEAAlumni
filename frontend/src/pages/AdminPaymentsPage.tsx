@@ -16,9 +16,11 @@ const PAGE_SIZE = 20
 export default function AdminPaymentsPage() {
   const { member } = useAuthStore()
   const isAdmin = member?.role === 'ADMIN'
+  // 회계 담당(임원 직책 "회계")도 관리자와 동일하게 회비 수납 내역을 등록할 수 있습니다.
+  const canManagePayments = isAdmin || member?.officerTitle === '회계'
   const queryClient = useQueryClient()
   const [year, setYear] = useState(currentYear)
-  const [typeFilter, setTypeFilter] = useState<'ALL' | 'MEMBERSHIP_FEE' | 'DONATION' | 'EVENT_FEE'>('ALL')
+  const [typeFilter, setTypeFilter] = useState<'ALL' | 'MEMBERSHIP_FEE' | 'MEMBERSHIP_FEE_BOARD' | 'DONATION' | 'EVENT_FEE'>('ALL')
   const [showAdd, setShowAdd] = useState(false)
   const [page, setPage] = useState(1)
 
@@ -39,7 +41,9 @@ export default function AdminPaymentsPage() {
   const { sorted, sortKey, direction, toggleSort } = useSort(payments?.items, 'paymentDate', 'desc')
 
   const methodLabel = (m: string) => ({ ZELLE: 'ZELLE', VENMO: 'VENMO', CHECK: 'CHECK', CREDIT_CARD: 'CREDIT CARD', CASH: 'CASH' }[m] || m)
-  const typeLabel = (t: string) => ({ MEMBERSHIP_FEE: '연회비', DONATION: '도네이션', EVENT_FEE: '행사비' }[t] || t)
+  const typeLabel = (t: string) => ({
+    MEMBERSHIP_FEE: '연회비', MEMBERSHIP_FEE_BOARD: '연회비+이사회비', DONATION: '도네이션', EVENT_FEE: '행사비',
+  }[t] || t)
 
   return (
     <div>
@@ -61,7 +65,7 @@ export default function AdminPaymentsPage() {
       {/* 필터 + 등록 버튼 */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="flex gap-2">
-          {(['ALL', 'MEMBERSHIP_FEE', 'DONATION', 'EVENT_FEE'] as const).map((t) => (
+          {(['ALL', 'MEMBERSHIP_FEE', 'MEMBERSHIP_FEE_BOARD', 'DONATION', 'EVENT_FEE'] as const).map((t) => (
             <button key={t} onClick={() => setTypeFilter(t)}
               className={`px-3 py-1.5 text-sm rounded-full font-medium ${
                 typeFilter === t ? 'bg-crimson text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -70,7 +74,7 @@ export default function AdminPaymentsPage() {
             </button>
           ))}
         </div>
-        {isAdmin && (
+        {canManagePayments && (
           <button onClick={() => setShowAdd(true)}
             className="text-sm text-white bg-crimson font-medium rounded-lg px-4 py-2 hover:bg-crimson-800">
             + 수납 내역 등록
@@ -180,9 +184,14 @@ function AddPaymentModal({ onClose, onCreated }: { onClose: () => void; onCreate
             ))}
           </select>
           <div className="grid grid-cols-2 gap-3">
-            <select value={form.paymentType} onChange={(e) => setForm({ ...form, paymentType: e.target.value })}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-              <option value="MEMBERSHIP_FEE">연회비</option>
+            <select value={form.paymentType} onChange={(e) => {
+              const paymentType = e.target.value
+              // 연회비/연회비+이사회비 선택 시 기본 금액을 채워주되, 이미 금액을 입력했다면 덮어쓰지 않습니다.
+              const defaultAmount = paymentType === 'MEMBERSHIP_FEE' ? '100' : paymentType === 'MEMBERSHIP_FEE_BOARD' ? '200' : ''
+              setForm((f) => ({ ...f, paymentType, amount: f.amount || defaultAmount }))
+            }} className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+              <option value="MEMBERSHIP_FEE">연회비 ($100)</option>
+              <option value="MEMBERSHIP_FEE_BOARD">연회비+이사회비 ($200)</option>
               <option value="DONATION">도네이션</option>
               <option value="EVENT_FEE">행사비</option>
             </select>
