@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { galleryApi, eventsApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import { getYouTubeEmbedUrl, getYouTubeThumbnail } from '../utils/youtube'
+import { fileToResizedDataUrl } from '../utils/image'
 import Pagination from '../components/common/Pagination'
 import type { EventList, GalleryItem, PagedResult } from '../types'
 
@@ -200,6 +201,7 @@ function AddGalleryModal({ onClose, onCreated }: { onClose: () => void; onCreate
     mediaUrl: '', thumbnailUrl: '', eventId: '', displayOrder: 0,
   })
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     eventsApi.getList({ pageSize: 100 })
@@ -207,8 +209,24 @@ function AddGalleryModal({ onClose, onCreated }: { onClose: () => void; onCreate
       .catch(() => {})
   }, [])
 
+  const handlePhotoFile = async (file: File) => {
+    setUploading(true)
+    try {
+      const dataUrl = await fileToResizedDataUrl(file, 1200, 1200, 0.8)
+      setForm((f) => ({ ...f, mediaUrl: dataUrl }))
+    } catch (err: any) {
+      toast.error(err?.message || '이미지를 처리하지 못했습니다.')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!form.mediaUrl) {
+      toast.error(form.mediaType === 'PHOTO' ? '사진을 선택해주세요.' : 'YouTube 링크를 입력해주세요.')
+      return
+    }
     setSaving(true)
     try {
       await galleryApi.create({
@@ -239,7 +257,8 @@ function AddGalleryModal({ onClose, onCreated }: { onClose: () => void; onCreate
             onChange={(e) => setForm({ ...form, title: e.target.value })}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
           <div className="grid grid-cols-2 gap-3">
-            <select value={form.mediaType} onChange={(e) => setForm({ ...form, mediaType: e.target.value as 'PHOTO' | 'VIDEO' })}
+            <select value={form.mediaType}
+              onChange={(e) => setForm({ ...form, mediaType: e.target.value as 'PHOTO' | 'VIDEO', mediaUrl: '' })}
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
               <option value="VIDEO">영상</option>
               <option value="PHOTO">사진</option>
@@ -252,11 +271,29 @@ function AddGalleryModal({ onClose, onCreated }: { onClose: () => void; onCreate
               ))}
             </select>
           </div>
-          <input required
-            placeholder={form.mediaType === 'VIDEO' ? 'YouTube 링크 (예: https://www.youtube.com/watch?v=...)' : '이미지 URL'}
-            value={form.mediaUrl}
-            onChange={(e) => setForm({ ...form, mediaUrl: e.target.value })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          {form.mediaType === 'VIDEO' ? (
+            <input required
+              placeholder="YouTube 링크 (예: https://www.youtube.com/watch?v=...)"
+              value={form.mediaUrl}
+              onChange={(e) => setForm({ ...form, mediaUrl: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          ) : (
+            <div className="space-y-2">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handlePhotoFile(file)
+                }}
+                className="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-crimson-50 file:text-crimson file:text-sm file:font-medium"
+              />
+              {uploading && <p className="text-xs text-gray-400">사진을 불러오는 중...</p>}
+              {form.mediaUrl && !uploading && (
+                <img src={form.mediaUrl} alt="미리보기" className="max-h-48 rounded-lg border border-gray-200" />
+              )}
+            </div>
+          )}
           {form.mediaType === 'VIDEO' && (
             <div className="space-y-2">
               <input
@@ -298,7 +335,7 @@ function AddGalleryModal({ onClose, onCreated }: { onClose: () => void; onCreate
           </div>
           <div className="flex gap-2 pt-2">
             <button type="button" onClick={onClose} className="flex-1 border border-gray-300 rounded-lg py-2 text-sm">취소</button>
-            <button type="submit" disabled={saving}
+            <button type="submit" disabled={saving || uploading}
               className="flex-1 bg-crimson text-white rounded-lg py-2 text-sm disabled:opacity-60">
               {saving ? '등록 중...' : '등록'}
             </button>
