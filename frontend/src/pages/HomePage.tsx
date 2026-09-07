@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { format } from 'date-fns'
 import { eventsApi, articlesApi, galleryApi } from '../api'
 import { getYouTubeEmbedUrl, getYouTubeThumbnail } from '../utils/youtube'
+import { getGoogleMapsLink } from '../utils/maps'
 import type { EventList, ArticleList, GalleryItem, PagedResult } from '../types'
 
 export default function HomePage() {
@@ -69,7 +70,19 @@ export default function HomePage() {
             <div key={ev.id} className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
               <h3 className="font-bold text-gray-800 mb-2">{ev.title}</h3>
               <p className="text-sm text-gray-500">일시: {format(new Date(ev.eventDate), 'yyyy.MM.dd')}</p>
-              <p className="text-sm text-gray-500 mb-3">장소: {ev.location}</p>
+              <p className="text-sm text-gray-500 mb-3">
+                장소: {ev.location}
+                {ev.googleMapsUrl && (
+                  <a
+                    href={getGoogleMapsLink(ev.googleMapsUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-2 text-crimson hover:underline"
+                  >
+                    지도에서 보기 &gt;
+                  </a>
+                )}
+              </p>
               <Link to={`/events/${ev.id}`} className="text-sm text-crimson font-medium hover:underline">
                 참가 신청 (RSVP) &gt;
               </Link>
