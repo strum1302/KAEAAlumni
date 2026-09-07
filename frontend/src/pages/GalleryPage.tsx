@@ -1,16 +1,23 @@
 import { useEffect, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
-import { galleryApi } from '../api'
+import toast from 'react-hot-toast'
+import { galleryApi, eventsApi } from '../api'
+import { useAuthStore } from '../store/authStore'
 import Pagination from '../components/common/Pagination'
-import type { GalleryItem, PagedResult } from '../types'
+import type { EventList, GalleryItem, PagedResult } from '../types'
 
 const PAGE_SIZE = 16
 
 export default function GalleryPage() {
+  const { member } = useAuthStore()
+  const canManage = member?.role === 'OFFICER' || member?.role === 'ADMIN'
+  const queryClient = useQueryClient()
   const [filter, setFilter] = useState<'ALL' | 'PHOTO' | 'VIDEO'>('ALL')
   const [selected, setSelected] = useState<GalleryItem | null>(null)
   const [page, setPage] = useState(1)
+  const [showAdd, setShowAdd] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => setPage(1), [filter])
 
@@ -21,9 +28,34 @@ export default function GalleryPage() {
     })).data as PagedResult<GalleryItem>,
   })
 
+  const handleDelete = async (item: GalleryItem) => {
+    const confirmed = window.confirm(`"${item.title}" 항목을 삭제하시겠습니까?`)
+    if (!confirmed) return
+
+    setDeleting(true)
+    try {
+      await galleryApi.delete(item.id)
+      toast.success('삭제되었습니다.')
+      setSelected(null)
+      queryClient.invalidateQueries({ queryKey: ['gallery'] })
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || '삭제에 실패했습니다.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-800 mb-1">미디어 갤러리</h1>
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="text-2xl font-bold text-gray-800">미디어 갤러리</h1>
+        {canManage && (
+          <button onClick={() => setShowAdd(true)}
+            className="text-sm text-white bg-crimson font-medium rounded-lg px-4 py-2 hover:bg-crimson-800">
+            + 미디어 등록
+          </button>
+        )}
+      </div>
       <p className="text-sm text-gray-500 mb-4">행사 사진 &amp; 영상 아카이브</p>
 
       <div className="flex gap-2 mb-6">
@@ -72,9 +104,114 @@ export default function GalleryPage() {
               />
             )}
             <p className="text-white text-center mt-3">{selected.title}</p>
+            {selected.description && (
+              <p className="text-gray-300 text-sm text-center mt-1">{selected.description}</p>
+            )}
+            {canManage && (
+              <div className="text-center mt-3">
+                <button
+                  onClick={() => handleDelete(selected)}
+                  disabled={deleting}
+                  className="text-sm text-red-400 hover:text-red-300 disabled:opacity-50"
+                >
+                  {deleting ? '삭제 중...' : '삭제'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
+
+      {showAdd && (
+        <AddGalleryModal
+          onClose={() => setShowAdd(false)}
+          onCreated={() => queryClient.invalidateQueries({ queryKey: ['gallery'] })}
+        />
+      )}
+    </div>
+  )
+}
+
+function AddGalleryModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const [events, setEvents] = useState<EventList[]>([])
+  const [form, setForm] = useState({
+    title: '', description: '', mediaType: 'VIDEO' as 'PHOTO' | 'VIDEO',
+    mediaUrl: '', thumbnailUrl: '', eventId: '',
+  })
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    eventsApi.getList({ pageSize: 100 })
+      .then((res) => setEvents((res.data as PagedResult<EventList>).items))
+      .catch(() => {})
+  }, [])
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      await galleryApi.create({
+        title: form.title,
+        description: form.description || undefined,
+        mediaType: form.mediaType,
+        mediaUrl: form.mediaUrl,
+        thumbnailUrl: form.thumbnailUrl || undefined,
+        eventId: form.eventId || undefined,
+      })
+      toast.success('등록되었습니다.')
+      onCreated()
+      onClose()
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || '등록에 실패했습니다.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-md space-y-4 max-h-[90vh] overflow-y-auto">
+        <h3 className="font-bold text-gray-800">미디어 등록</h3>
+        <form onSubmit={submit} className="space-y-3">
+          <input required placeholder="제목 (예: 교가 및 응원가 합창 영상)" value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          <div className="grid grid-cols-2 gap-3">
+            <select value={form.mediaType} onChange={(e) => setForm({ ...form, mediaType: e.target.value as 'PHOTO' | 'VIDEO' })}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+              <option value="VIDEO">영상</option>
+              <option value="PHOTO">사진</option>
+            </select>
+            <select value={form.eventId} onChange={(e) => setForm({ ...form, eventId: e.target.value })}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+              <option value="">연결된 행사 없음</option>
+              {events.map((ev) => (
+                <option key={ev.id} value={ev.id}>{ev.title}</option>
+              ))}
+            </select>
+          </div>
+          <input required
+            placeholder={form.mediaType === 'VIDEO' ? 'YouTube 링크 (예: https://www.youtube.com/watch?v=...)' : '이미지 URL'}
+            value={form.mediaUrl}
+            onChange={(e) => setForm({ ...form, mediaUrl: e.target.value })}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          {form.mediaType === 'VIDEO' && (
+            <input placeholder="썸네일 이미지 URL (선택)" value={form.thumbnailUrl}
+              onChange={(e) => setForm({ ...form, thumbnailUrl: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          )}
+          <textarea placeholder="설명 (선택)" value={form.description} rows={2}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          <div className="flex gap-2 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 border border-gray-300 rounded-lg py-2 text-sm">취소</button>
+            <button type="submit" disabled={saving}
+              className="flex-1 bg-crimson text-white rounded-lg py-2 text-sm disabled:opacity-60">
+              {saving ? '등록 중...' : '등록'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }
