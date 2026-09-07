@@ -124,7 +124,10 @@ export default function HomePage() {
                 allowFullScreen
               />
             )}
-            <p className="text-white text-center mt-3">{selectedMedia.title}</p>
+            <p className="text-white text-center mt-3">{mediaLabel(selectedMedia)}</p>
+            {selectedMedia.description && (
+              <p className="text-gray-300 text-sm text-center mt-1">{selectedMedia.description}</p>
+            )}
           </div>
         </div>
       )}
@@ -168,6 +171,12 @@ export default function HomePage() {
   )
 }
 
+// 행사에 연결된 미디어는 "행사명 - 사진/영상 제목" 형식으로, 행사와 무관한 자료(교가 등)는
+// 제목만 표시합니다.
+function mediaLabel(m: GalleryItem): string {
+  return m.eventTitle ? `${m.eventTitle} - ${m.title}` : m.title
+}
+
 function MediaGrid({
   items, onSelect, emptyText,
 }: { items?: GalleryItem[]; onSelect: (item: GalleryItem) => void; emptyText: string }) {
@@ -179,23 +188,26 @@ function MediaGrid({
           <button
             key={m.id}
             onClick={() => onSelect(m)}
-            className="text-left rounded-xl overflow-hidden bg-gray-100 aspect-square relative group"
+            className="text-left group"
           >
-            {m.mediaType === 'PHOTO' ? (
-              <img src={m.mediaUrl} alt={m.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-            ) : videoThumb ? (
-              <>
-                <img src={videoThumb} alt={m.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/25 text-white text-2xl">▶</div>
-              </>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white text-sm px-2 text-center">
-                ▶ {m.title}
-              </div>
-            )}
-            <span className="absolute top-2 left-2 text-[10px] bg-black/60 text-white px-2 py-0.5 rounded">
-              {m.mediaType === 'PHOTO' ? '사진' : '영상'}
-            </span>
+            <div className="rounded-xl overflow-hidden bg-gray-100 aspect-square relative">
+              {m.mediaType === 'PHOTO' ? (
+                <img src={m.mediaUrl} alt={m.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+              ) : videoThumb ? (
+                <>
+                  <img src={videoThumb} alt={m.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/25 text-white text-2xl">▶</div>
+                </>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white text-sm px-2 text-center">
+                  ▶ {m.title}
+                </div>
+              )}
+              <span className="absolute top-2 left-2 text-[10px] bg-black/60 text-white px-2 py-0.5 rounded">
+                {m.mediaType === 'PHOTO' ? '사진' : '영상'}
+              </span>
+            </div>
+            <p className="text-sm text-gray-700 mt-1.5 truncate">{mediaLabel(m)}</p>
           </button>
         )
       })}

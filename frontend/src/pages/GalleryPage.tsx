@@ -11,6 +11,12 @@ import type { EventList, GalleryItem, PagedResult } from '../types'
 
 const PAGE_SIZE = 16
 
+// 행사에 연결된 미디어는 "행사명 - 사진/영상 제목" 형식으로, 행사와 무관한 자료(교가 등)는
+// 제목만 표시합니다.
+function mediaLabel(item: GalleryItem): string {
+  return item.eventTitle ? `${item.eventTitle} - ${item.title}` : item.title
+}
+
 export default function GalleryPage() {
   const { member } = useAuthStore()
   const canManage = member?.role === 'OFFICER' || member?.role === 'ADMIN'
@@ -92,7 +98,7 @@ export default function GalleryPage() {
                     {item.mediaType === 'PHOTO' ? '사진' : '영상'}
                   </span>
                 </div>
-                <p className="text-sm text-gray-700 mt-1.5 truncate">{item.title}</p>
+                <p className="text-sm text-gray-700 mt-1.5 truncate">{mediaLabel(item)}</p>
                 <p className="text-xs text-gray-400">{format(new Date(item.createdAt), 'yyyy.MM.dd')}</p>
               </button>
               {canManage && <GalleryItemAdminControls item={item} onDelete={() => handleDelete(item)} deleting={deleting} />}
@@ -116,7 +122,7 @@ export default function GalleryPage() {
                 allowFullScreen
               />
             )}
-            <p className="text-white text-center mt-3">{selected.title}</p>
+            <p className="text-white text-center mt-3">{mediaLabel(selected)}</p>
             {selected.description && (
               <p className="text-gray-300 text-sm text-center mt-1">{selected.description}</p>
             )}
