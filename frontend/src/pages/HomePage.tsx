@@ -24,9 +24,16 @@ export default function HomePage() {
     queryFn: async () => (await articlesApi.getList({ category: 'STORY', pageSize: 3 })).data as PagedResult<ArticleList>,
   })
 
+  // 행사에 연결된 사진/영상("최근 행사 미디어")과, 특정 행사와 무관한 교가·응원가 등
+  // 고대 자료("고대 자료실")를 서로 섞이지 않도록 분리해서 보여줍니다.
   const { data: media } = useQuery({
-    queryKey: ['gallery', 'home'],
-    queryFn: async () => (await galleryApi.getList({ pageSize: 4 })).data as PagedResult<GalleryItem>,
+    queryKey: ['gallery', 'home', 'events'],
+    queryFn: async () => (await galleryApi.getList({ hasEvent: true, pageSize: 4 })).data as PagedResult<GalleryItem>,
+  })
+
+  const { data: archive } = useQuery({
+    queryKey: ['gallery', 'home', 'archive'],
+    queryFn: async () => (await galleryApi.getList({ hasEvent: false, pageSize: 4 })).data as PagedResult<GalleryItem>,
   })
 
   return (
@@ -80,37 +87,16 @@ export default function HomePage() {
           <h2 className="text-xl font-bold text-gray-800">최근 행사 미디어 (사진 &amp; 영상)</h2>
           <Link to="/gallery" className="text-sm text-crimson font-medium hover:underline">갤러리 전체보기 &rarr;</Link>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {media?.items.map((m) => {
-            const videoThumb = m.mediaType === 'VIDEO' ? (m.thumbnailUrl || getYouTubeThumbnail(m.mediaUrl)) : null
-            return (
-              <button
-                key={m.id}
-                onClick={() => setSelectedMedia(m)}
-                className="text-left rounded-xl overflow-hidden bg-gray-100 aspect-square relative group"
-              >
-                {m.mediaType === 'PHOTO' ? (
-                  <img src={m.mediaUrl} alt={m.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                ) : videoThumb ? (
-                  <>
-                    <img src={videoThumb} alt={m.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/25 text-white text-2xl">▶</div>
-                  </>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white text-sm px-2 text-center">
-                    ▶ {m.title}
-                  </div>
-                )}
-                <span className="absolute top-2 left-2 text-[10px] bg-black/60 text-white px-2 py-0.5 rounded">
-                  {m.mediaType === 'PHOTO' ? '사진' : '영상'}
-                </span>
-              </button>
-            )
-          })}
-          {!media?.items.length && (
-            <p className="text-sm text-gray-400 col-span-4">등록된 미디어가 없습니다.</p>
-          )}
+        <MediaGrid items={media?.items} onSelect={setSelectedMedia} emptyText="등록된 미디어가 없습니다." />
+      </section>
+
+      {/* 고대 자료실 (교가, 응원가 등 특정 행사와 무관한 자료) */}
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-gray-800">고대 자료실 (교가 &amp; 응원가)</h2>
+          <Link to="/gallery" className="text-sm text-crimson font-medium hover:underline">갤러리 전체보기 &rarr;</Link>
         </div>
+        <MediaGrid items={archive?.items} onSelect={setSelectedMedia} emptyText="등록된 자료가 없습니다." />
       </section>
 
       {selectedMedia && (
@@ -165,6 +151,44 @@ export default function HomePage() {
           </ul>
         </div>
       </section>
+    </div>
+  )
+}
+
+function MediaGrid({
+  items, onSelect, emptyText,
+}: { items?: GalleryItem[]; onSelect: (item: GalleryItem) => void; emptyText: string }) {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {items?.map((m) => {
+        const videoThumb = m.mediaType === 'VIDEO' ? (m.thumbnailUrl || getYouTubeThumbnail(m.mediaUrl)) : null
+        return (
+          <button
+            key={m.id}
+            onClick={() => onSelect(m)}
+            className="text-left rounded-xl overflow-hidden bg-gray-100 aspect-square relative group"
+          >
+            {m.mediaType === 'PHOTO' ? (
+              <img src={m.mediaUrl} alt={m.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+            ) : videoThumb ? (
+              <>
+                <img src={videoThumb} alt={m.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/25 text-white text-2xl">▶</div>
+              </>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white text-sm px-2 text-center">
+                ▶ {m.title}
+              </div>
+            )}
+            <span className="absolute top-2 left-2 text-[10px] bg-black/60 text-white px-2 py-0.5 rounded">
+              {m.mediaType === 'PHOTO' ? '사진' : '영상'}
+            </span>
+          </button>
+        )
+      })}
+      {!items?.length && (
+        <p className="text-sm text-gray-400 col-span-4">{emptyText}</p>
+      )}
     </div>
   )
 }

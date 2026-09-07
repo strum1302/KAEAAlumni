@@ -91,7 +91,7 @@ export const articlesApi = {
 // ── Gallery API ───────────────────────────────────
 export const galleryApi = {
   getList: (params?: {
-    mediaType?: string; eventId?: string; articleId?: string
+    mediaType?: string; eventId?: string; articleId?: string; hasEvent?: boolean
     page?: number; pageSize?: number
   }) => api.get('/gallery', { params }),
   create: (data: {

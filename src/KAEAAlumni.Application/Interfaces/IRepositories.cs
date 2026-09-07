@@ -44,7 +44,7 @@ public interface IArticleRepository : IRepository<Domain.Entities.Article>
 public interface IGalleryItemRepository : IRepository<Domain.Entities.GalleryItem>
 {
     Task<(List<Domain.Entities.GalleryItem> Items, int Total)> GetPagedAsync(
-        MediaType? mediaType, Guid? eventId, Guid? articleId, int page, int pageSize);
+        MediaType? mediaType, Guid? eventId, Guid? articleId, int page, int pageSize, bool? hasEvent = null);
 }
 
 public interface IPaymentRepository : IRepository<Domain.Entities.Payment>

@@ -22,6 +22,7 @@ public class GalleryController : ControllerBase
         [FromQuery] string? mediaType,
         [FromQuery] Guid? eventId,
         [FromQuery] Guid? articleId,
+        [FromQuery] bool? hasEvent,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 24)
     {
@@ -30,7 +31,7 @@ public class GalleryController : ControllerBase
             Enum.TryParse<MediaType>(mediaType, true, out var parsed))
             type = parsed;
 
-        var (items, total) = await _galleryRepo.GetPagedAsync(type, eventId, articleId, page, pageSize);
+        var (items, total) = await _galleryRepo.GetPagedAsync(type, eventId, articleId, page, pageSize, hasEvent);
         var dtos = items.Select(g => new GalleryItemDto(
             g.Id, g.Title, g.Description, g.MediaType.ToString(), g.MediaUrl,
             g.ThumbnailUrl, g.DisplayOrder, g.EventId, g.Event?.Title, g.ArticleId, g.CreatedAt

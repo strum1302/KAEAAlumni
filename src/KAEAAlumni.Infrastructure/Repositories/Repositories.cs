@@ -138,7 +138,7 @@ public class GalleryItemRepository : Repository<GalleryItem>, IGalleryItemReposi
     public GalleryItemRepository(AppDbContext db) : base(db) { }
 
     public async Task<(List<GalleryItem> Items, int Total)> GetPagedAsync(
-        MediaType? mediaType, Guid? eventId, Guid? articleId, int page, int pageSize)
+        MediaType? mediaType, Guid? eventId, Guid? articleId, int page, int pageSize, bool? hasEvent = null)
     {
         var query = _db.GalleryItems.Include(g => g.Event).AsQueryable();
 
@@ -148,6 +148,10 @@ public class GalleryItemRepository : Repository<GalleryItem>, IGalleryItemReposi
             query = query.Where(g => g.EventId == eventId.Value);
         if (articleId.HasValue)
             query = query.Where(g => g.ArticleId == articleId.Value);
+        // 홈페이지에서 "최근 행사 미디어"(행사에 연결된 항목)와 "고대 자료실"(교가/응원가 등
+        // 특정 행사와 무관한 항목)을 분리해서 보여주기 위한 필터.
+        if (hasEvent.HasValue)
+            query = hasEvent.Value ? query.Where(g => g.EventId != null) : query.Where(g => g.EventId == null);
 
         query = query.OrderBy(g => g.DisplayOrder).ThenByDescending(g => g.CreatedAt);
 
