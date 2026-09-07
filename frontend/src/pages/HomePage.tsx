@@ -69,7 +69,7 @@ export default function HomePage() {
           {events?.items.map((ev) => (
             <div key={ev.id} className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
               <h3 className="font-bold text-gray-800 mb-2">{ev.title}</h3>
-              <p className="text-sm text-gray-500">일시: {format(new Date(ev.eventDate), 'yyyy.MM.dd')}</p>
+              <p className="text-sm text-gray-500">일시: {format(new Date(ev.eventDate), 'yyyy.MM.dd (EEE) HH:mm')}</p>
               <p className="text-sm text-gray-500 mb-3">
                 장소: {ev.location}
                 {ev.googleMapsUrl && (
