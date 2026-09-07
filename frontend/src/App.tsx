@@ -14,6 +14,7 @@ import ArticleDetailPage from './pages/ArticleDetailPage'
 import JoinPage from './pages/JoinPage'
 import GivingPage from './pages/GivingPage'
 import AdminPaymentsPage from './pages/AdminPaymentsPage'
+import AdminMembersPage from './pages/AdminMembersPage'
 import LoginPage from './pages/LoginPage'
 import ProfilePage from './pages/ProfilePage'
 
@@ -55,6 +56,9 @@ export default function App() {
             } />
             <Route path="/admin/payments" element={
               <PrivateRoute roles={['OFFICER', 'ADMIN']}><AdminPaymentsPage /></PrivateRoute>
+            } />
+            <Route path="/admin/members" element={
+              <PrivateRoute roles={['ADMIN']}><AdminMembersPage /></PrivateRoute>
             } />
           </Route>
         </Routes>

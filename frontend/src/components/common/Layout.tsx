@@ -78,6 +78,12 @@ export default function Layout() {
                     관리자 대시보드
                   </Link>
                 )}
+                {member?.role === 'ADMIN' && (
+                  <Link to="/admin/members"
+                    className="text-sm text-crimson font-medium px-3 py-1.5 bg-crimson-50 rounded hover:bg-crimson-100">
+                    교우 권한 관리
+                  </Link>
+                )}
                 <Link to="/profile" className="text-sm text-gray-700 hover:text-crimson font-medium">
                   {member?.name} 님
                 </Link>
