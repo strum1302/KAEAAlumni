@@ -124,10 +124,10 @@ export default function AboutPage() {
                 <img
                   src={o.photoUrl}
                   alt={o.name}
-                  className="w-[200px] h-[400px] object-cover rounded-lg mx-auto mb-2"
+                  className="w-full max-w-[200px] h-auto rounded-lg mx-auto mb-2"
                 />
               ) : (
-                <div className="w-[200px] h-[400px] rounded-lg bg-crimson-50 text-crimson font-bold text-4xl flex items-center justify-center mx-auto mb-2">
+                <div className="w-[200px] h-[200px] rounded-lg bg-crimson-50 text-crimson font-bold text-4xl flex items-center justify-center mx-auto mb-2">
                   {o.name.slice(0, 1)}
                 </div>
               )}
