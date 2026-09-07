@@ -24,10 +24,11 @@ public class EventsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetEvents(
         [FromQuery] bool? upcomingOnly,
+        [FromQuery] int? year,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        var (events, total) = await _eventRepo.GetPagedAsync(upcomingOnly, page, pageSize);
+        var (events, total) = await _eventRepo.GetPagedAsync(upcomingOnly, page, pageSize, year);
         var items = events.Select(e => new EventListDto(
             e.Id, e.Title, e.EventDate, e.Location, e.Fee, e.MaxAttendees,
             e.Rsvps?.Sum(r => 1 + r.AdditionalGuests) ?? 0, e.IsActive, e.GoogleMapsUrl
@@ -37,8 +38,13 @@ public class EventsController : ControllerBase
             items, total, page, pageSize, (int)Math.Ceiling(total / (double)pageSize)));
     }
 
+    // 연도 드롭다운용 — 실제 행사가 등록되어 있는 연도 목록(최신순)
+    [HttpGet("years")]
+    public async Task<IActionResult> GetYears()
+        => Ok(await _eventRepo.GetDistinctYearsAsync());
+
     // 행사 상세 (참가 신청 폼 + 하부 미디어 갤러리 포함 화면에서 사용)
-    [HttpGet("{id}")]
+    [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetEvent(Guid id)
     {
         var ev = await _eventRepo.GetWithDetailsAsync(id);
@@ -81,6 +87,8 @@ public class EventsController : ControllerBase
     {
         var ev = await _eventRepo.GetByIdAsync(id);
         if (ev == null) return NotFound();
+        if (ev.EventDate < DateTime.UtcNow)
+            return BadRequest(new { message = "이미 지난 행사는 수정할 수 없습니다." });
 
         ev.Title = dto.Title;
         ev.Description = dto.Description;
@@ -102,6 +110,8 @@ public class EventsController : ControllerBase
     {
         var ev = await _eventRepo.GetByIdAsync(id);
         if (ev == null) return NotFound();
+        if (ev.EventDate < DateTime.UtcNow)
+            return BadRequest(new { message = "이미 지난 행사는 삭제할 수 없습니다." });
 
         await _eventRepo.DeleteAsync(ev);
         await _eventRepo.SaveChangesAsync();

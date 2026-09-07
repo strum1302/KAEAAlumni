@@ -22,17 +22,23 @@ export default function GalleryPage() {
   const canManage = member?.role === 'OFFICER' || member?.role === 'ADMIN'
   const queryClient = useQueryClient()
   const [filter, setFilter] = useState<'ALL' | 'PHOTO' | 'VIDEO'>('ALL')
+  const [year, setYear] = useState<number | null>(null)
   const [selected, setSelected] = useState<GalleryItem | null>(null)
   const [page, setPage] = useState(1)
   const [showAdd, setShowAdd] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
-  useEffect(() => setPage(1), [filter])
+  useEffect(() => setPage(1), [filter, year])
+
+  const { data: years } = useQuery({
+    queryKey: ['gallery', 'years'],
+    queryFn: async () => (await galleryApi.getYears()).data as number[],
+  })
 
   const { data } = useQuery({
-    queryKey: ['gallery', 'all', filter, page],
+    queryKey: ['gallery', 'all', filter, year, page],
     queryFn: async () => (await galleryApi.getList({
-      mediaType: filter === 'ALL' ? undefined : filter, page, pageSize: PAGE_SIZE,
+      mediaType: filter === 'ALL' ? undefined : filter, year: year ?? undefined, page, pageSize: PAGE_SIZE,
     })).data as PagedResult<GalleryItem>,
   })
 
@@ -66,15 +72,27 @@ export default function GalleryPage() {
       </div>
       <p className="text-sm text-gray-500 mb-4">행사 사진 &amp; 영상 아카이브</p>
 
-      <div className="flex gap-2 mb-6">
-        {(['ALL', 'PHOTO', 'VIDEO'] as const).map((f) => (
-          <button key={f} onClick={() => setFilter(f)}
-            className={`px-4 py-1.5 text-sm rounded-full font-medium ${
-              filter === f ? 'bg-crimson text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}>
-            {f === 'ALL' ? '전체보기' : f === 'PHOTO' ? '사진만 보기' : '영상만 보기'}
-          </button>
-        ))}
+      <div className="flex items-center justify-between gap-2 mb-6 flex-wrap">
+        <div className="flex gap-2">
+          {(['ALL', 'PHOTO', 'VIDEO'] as const).map((f) => (
+            <button key={f} onClick={() => setFilter(f)}
+              className={`px-4 py-1.5 text-sm rounded-full font-medium ${
+                filter === f ? 'bg-crimson text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}>
+              {f === 'ALL' ? '전체보기' : f === 'PHOTO' ? '사진만 보기' : '영상만 보기'}
+            </button>
+          ))}
+        </div>
+        <select
+          value={year ?? ''}
+          onChange={(e) => setYear(e.target.value ? Number(e.target.value) : null)}
+          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+        >
+          <option value="">전체 연도</option>
+          {years?.map((y) => (
+            <option key={y} value={y}>{y}년</option>
+          ))}
+        </select>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

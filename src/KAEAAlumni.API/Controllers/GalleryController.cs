@@ -23,6 +23,7 @@ public class GalleryController : ControllerBase
         [FromQuery] Guid? eventId,
         [FromQuery] Guid? articleId,
         [FromQuery] bool? hasEvent,
+        [FromQuery] int? year,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 24)
     {
@@ -31,7 +32,7 @@ public class GalleryController : ControllerBase
             Enum.TryParse<MediaType>(mediaType, true, out var parsed))
             type = parsed;
 
-        var (items, total) = await _galleryRepo.GetPagedAsync(type, eventId, articleId, page, pageSize, hasEvent);
+        var (items, total) = await _galleryRepo.GetPagedAsync(type, eventId, articleId, page, pageSize, hasEvent, year);
         var dtos = items.Select(g => new GalleryItemDto(
             g.Id, g.Title, g.Description, g.MediaType.ToString(), g.MediaUrl,
             g.ThumbnailUrl, g.DisplayOrder, g.EventId, g.Event?.Title, g.ArticleId, g.CreatedAt
@@ -40,6 +41,11 @@ public class GalleryController : ControllerBase
         return Ok(new PagedResultDto<GalleryItemDto>(
             dtos, total, page, pageSize, (int)Math.Ceiling(total / (double)pageSize)));
     }
+
+    // 연도 드롭다운용 — 실제 미디어가 등록되어 있는 연도 목록(최신순, 등록일 기준)
+    [HttpGet("years")]
+    public async Task<IActionResult> GetYears()
+        => Ok(await _galleryRepo.GetDistinctYearsAsync());
 
     // 행사/게시글 하부 사진·영상 업로드 (Officer/Admin)
     [Authorize(Roles = "OFFICER,ADMIN")]

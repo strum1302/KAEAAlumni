@@ -68,14 +68,24 @@ public class EventRepository : Repository<Event>, IEventRepository
     public EventRepository(AppDbContext db) : base(db) { }
 
     public async Task<(List<Event> Events, int Total)> GetPagedAsync(
-        bool? upcomingOnly, int page, int pageSize)
+        bool? upcomingOnly, int page, int pageSize, int? year = null)
     {
         var query = _db.Events.Include(e => e.Rsvps).AsQueryable();
 
         if (upcomingOnly == true)
+        {
             query = query.Where(e => e.EventDate >= DateTime.UtcNow && e.IsActive);
+            // 다가오는 행사는 가까운 날짜순(오름차순)으로 보여줍니다.
+            query = query.OrderBy(e => e.EventDate);
+        }
+        else
+        {
+            // 전체 목록(행사 및 모임 페이지)은 최근/최신 날짜순(내림차순)으로 보여줍니다.
+            query = query.OrderByDescending(e => e.EventDate);
+        }
 
-        query = query.OrderBy(e => e.EventDate);
+        if (year.HasValue)
+            query = query.Where(e => e.EventDate.Year == year.Value);
 
         var total = await query.CountAsync();
         var events = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
@@ -87,6 +97,13 @@ public class EventRepository : Repository<Event>, IEventRepository
             .Include(e => e.Rsvps)
             .Include(e => e.GalleryItems)
             .FirstOrDefaultAsync(e => e.Id == id);
+
+    public async Task<List<int>> GetDistinctYearsAsync()
+        => await _db.Events
+            .Select(e => e.EventDate.Year)
+            .Distinct()
+            .OrderByDescending(y => y)
+            .ToListAsync();
 }
 
 // ── EventRsvp Repository ───────────────────────────────────
@@ -138,7 +155,7 @@ public class GalleryItemRepository : Repository<GalleryItem>, IGalleryItemReposi
     public GalleryItemRepository(AppDbContext db) : base(db) { }
 
     public async Task<(List<GalleryItem> Items, int Total)> GetPagedAsync(
-        MediaType? mediaType, Guid? eventId, Guid? articleId, int page, int pageSize, bool? hasEvent = null)
+        MediaType? mediaType, Guid? eventId, Guid? articleId, int page, int pageSize, bool? hasEvent = null, int? year = null)
     {
         var query = _db.GalleryItems.Include(g => g.Event).AsQueryable();
 
@@ -152,6 +169,9 @@ public class GalleryItemRepository : Repository<GalleryItem>, IGalleryItemReposi
         // 특정 행사와 무관한 항목)을 분리해서 보여주기 위한 필터.
         if (hasEvent.HasValue)
             query = hasEvent.Value ? query.Where(g => g.EventId != null) : query.Where(g => g.EventId == null);
+        // 갤러리 메인 페이지의 연도 선택 드롭다운용 필터 (등록일 기준).
+        if (year.HasValue)
+            query = query.Where(g => g.CreatedAt.Year == year.Value);
 
         query = query.OrderBy(g => g.DisplayOrder).ThenByDescending(g => g.CreatedAt);
 
@@ -159,6 +179,13 @@ public class GalleryItemRepository : Repository<GalleryItem>, IGalleryItemReposi
         var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
         return (items, total);
     }
+
+    public async Task<List<int>> GetDistinctYearsAsync()
+        => await _db.GalleryItems
+            .Select(g => g.CreatedAt.Year)
+            .Distinct()
+            .OrderByDescending(y => y)
+            .ToListAsync();
 }
 
 // ── Payment Repository ─────────────────────────────────────

@@ -24,8 +24,9 @@ public interface IMemberRepository : IRepository<Domain.Entities.Member>
 public interface IEventRepository : IRepository<Domain.Entities.Event>
 {
     Task<(List<Domain.Entities.Event> Events, int Total)> GetPagedAsync(
-        bool? upcomingOnly, int page, int pageSize);
+        bool? upcomingOnly, int page, int pageSize, int? year = null);
     Task<Domain.Entities.Event?> GetWithDetailsAsync(Guid id);
+    Task<List<int>> GetDistinctYearsAsync();
 }
 
 public interface IEventRsvpRepository : IRepository<Domain.Entities.EventRsvp>
@@ -44,7 +45,8 @@ public interface IArticleRepository : IRepository<Domain.Entities.Article>
 public interface IGalleryItemRepository : IRepository<Domain.Entities.GalleryItem>
 {
     Task<(List<Domain.Entities.GalleryItem> Items, int Total)> GetPagedAsync(
-        MediaType? mediaType, Guid? eventId, Guid? articleId, int page, int pageSize, bool? hasEvent = null);
+        MediaType? mediaType, Guid? eventId, Guid? articleId, int page, int pageSize, bool? hasEvent = null, int? year = null);
+    Task<List<int>> GetDistinctYearsAsync();
 }
 
 public interface IPaymentRepository : IRepository<Domain.Entities.Payment>

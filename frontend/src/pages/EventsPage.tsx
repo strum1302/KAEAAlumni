@@ -17,13 +17,19 @@ export default function EventsPage() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
+  const [year, setYear] = useState<number | null>(null)
   const [showAdd, setShowAdd] = useState(false)
   const [editing, setEditing] = useState<EventDetail | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
+  const { data: years } = useQuery({
+    queryKey: ['events', 'years'],
+    queryFn: async () => (await eventsApi.getYears()).data as number[],
+  })
+
   const { data } = useQuery({
-    queryKey: ['events', 'all', page],
-    queryFn: async () => (await eventsApi.getList({ page, pageSize: PAGE_SIZE })).data as PagedResult<EventList>,
+    queryKey: ['events', 'all', year, page],
+    queryFn: async () => (await eventsApi.getList({ year: year ?? undefined, page, pageSize: PAGE_SIZE })).data as PagedResult<EventList>,
   })
 
   const handleDelete = async (ev: EventList) => {
@@ -62,10 +68,25 @@ export default function EventsPage() {
           </button>
         )}
       </div>
-      <p className="text-sm text-gray-500 mb-6">연간 행사 일정 — 총장배 골프대회, 고연전, 야유회, 송년회 등</p>
+      <p className="text-sm text-gray-500 mb-4">연간 행사 일정 — 총장배 골프대회, 고연전, 야유회, 송년회 등</p>
+
+      <div className="mb-6">
+        <select
+          value={year ?? ''}
+          onChange={(e) => { setYear(e.target.value ? Number(e.target.value) : null); setPage(1) }}
+          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+        >
+          <option value="">전체 연도</option>
+          {years?.map((y) => (
+            <option key={y} value={y}>{y}년</option>
+          ))}
+        </select>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {data?.items.map((ev) => (
+        {data?.items.map((ev) => {
+          const isPast = new Date(ev.eventDate) < new Date()
+          return (
           <div key={ev.id} className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow">
             <div onClick={() => navigate(`/events/${ev.id}`)} className="cursor-pointer">
               <div className="flex items-center justify-between mb-2">
@@ -97,24 +118,31 @@ export default function EventsPage() {
               </div>
             </div>
             {canManage && (
-              <div className="flex justify-end gap-3 mt-2 pt-2 border-t border-gray-50">
-                <button
-                  onClick={() => openEdit(ev)}
-                  className="text-xs text-crimson hover:text-crimson-800"
-                >
-                  수정
-                </button>
-                <button
-                  onClick={() => handleDelete(ev)}
-                  disabled={deletingId === ev.id}
-                  className="text-xs text-red-500 hover:text-red-600 disabled:opacity-50"
-                >
-                  {deletingId === ev.id ? '삭제 중...' : '삭제'}
-                </button>
-              </div>
+              isPast ? (
+                <p className="text-right text-xs text-gray-400 mt-2 pt-2 border-t border-gray-50">
+                  이미 지난 행사는 수정/삭제할 수 없습니다.
+                </p>
+              ) : (
+                <div className="flex justify-end gap-3 mt-2 pt-2 border-t border-gray-50">
+                  <button
+                    onClick={() => openEdit(ev)}
+                    className="text-xs text-crimson hover:text-crimson-800"
+                  >
+                    수정
+                  </button>
+                  <button
+                    onClick={() => handleDelete(ev)}
+                    disabled={deletingId === ev.id}
+                    className="text-xs text-red-500 hover:text-red-600 disabled:opacity-50"
+                  >
+                    {deletingId === ev.id ? '삭제 중...' : '삭제'}
+                  </button>
+                </div>
+              )
             )}
           </div>
-        ))}
+          )
+        })}
         {!data?.items.length && <p className="text-sm text-gray-400">등록된 행사가 없습니다.</p>}
       </div>
 

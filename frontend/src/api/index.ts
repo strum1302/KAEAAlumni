@@ -63,8 +63,9 @@ export const membersApi = {
 
 // ── Events API ────────────────────────────────────
 export const eventsApi = {
-  getList: (params?: { upcomingOnly?: boolean; page?: number; pageSize?: number }) =>
+  getList: (params?: { upcomingOnly?: boolean; year?: number; page?: number; pageSize?: number }) =>
     api.get('/events', { params }),
+  getYears: () => api.get('/events/years'),
   getById: (id: string) => api.get(`/events/${id}`),
   create: (data: object) => api.post('/events', data),
   update: (id: string, data: object) => api.put(`/events/${id}`, data),
@@ -91,9 +92,10 @@ export const articlesApi = {
 // ── Gallery API ───────────────────────────────────
 export const galleryApi = {
   getList: (params?: {
-    mediaType?: string; eventId?: string; articleId?: string; hasEvent?: boolean
+    mediaType?: string; eventId?: string; articleId?: string; hasEvent?: boolean; year?: number
     page?: number; pageSize?: number
   }) => api.get('/gallery', { params }),
+  getYears: () => api.get('/gallery/years'),
   create: (data: {
     title: string; description?: string; mediaType: string; mediaUrl: string
     thumbnailUrl?: string; eventId?: string; articleId?: string; displayOrder?: number
