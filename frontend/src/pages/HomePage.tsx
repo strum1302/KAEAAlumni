@@ -1,10 +1,14 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { format } from 'date-fns'
 import { eventsApi, articlesApi, galleryApi } from '../api'
+import { getYouTubeEmbedUrl, getYouTubeThumbnail } from '../utils/youtube'
 import type { EventList, ArticleList, GalleryItem, PagedResult } from '../types'
 
 export default function HomePage() {
+  const [selectedMedia, setSelectedMedia] = useState<GalleryItem | null>(null)
+
   const { data: events } = useQuery({
     queryKey: ['events', 'upcoming'],
     queryFn: async () => (await eventsApi.getList({ upcomingOnly: true, pageSize: 3 })).data as PagedResult<EventList>,
@@ -77,25 +81,54 @@ export default function HomePage() {
           <Link to="/gallery" className="text-sm text-crimson font-medium hover:underline">갤러리 전체보기 &rarr;</Link>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {media?.items.map((m) => (
-            <div key={m.id} className="rounded-xl overflow-hidden bg-gray-100 aspect-square relative group">
-              {m.mediaType === 'PHOTO' ? (
-                <img src={m.mediaUrl} alt={m.title} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white text-sm">
-                  ▶ {m.title}
-                </div>
-              )}
-              <span className="absolute top-2 left-2 text-[10px] bg-black/60 text-white px-2 py-0.5 rounded">
-                {m.mediaType === 'PHOTO' ? '사진' : '영상'}
-              </span>
-            </div>
-          ))}
+          {media?.items.map((m) => {
+            const videoThumb = m.mediaType === 'VIDEO' ? (m.thumbnailUrl || getYouTubeThumbnail(m.mediaUrl)) : null
+            return (
+              <button
+                key={m.id}
+                onClick={() => setSelectedMedia(m)}
+                className="text-left rounded-xl overflow-hidden bg-gray-100 aspect-square relative group"
+              >
+                {m.mediaType === 'PHOTO' ? (
+                  <img src={m.mediaUrl} alt={m.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                ) : videoThumb ? (
+                  <>
+                    <img src={videoThumb} alt={m.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/25 text-white text-2xl">▶</div>
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white text-sm px-2 text-center">
+                    ▶ {m.title}
+                  </div>
+                )}
+                <span className="absolute top-2 left-2 text-[10px] bg-black/60 text-white px-2 py-0.5 rounded">
+                  {m.mediaType === 'PHOTO' ? '사진' : '영상'}
+                </span>
+              </button>
+            )
+          })}
           {!media?.items.length && (
             <p className="text-sm text-gray-400 col-span-4">등록된 미디어가 없습니다.</p>
           )}
         </div>
       </section>
+
+      {selectedMedia && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4" onClick={() => setSelectedMedia(null)}>
+          <div className="max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
+            {selectedMedia.mediaType === 'PHOTO' ? (
+              <img src={selectedMedia.mediaUrl} alt={selectedMedia.title} className="w-full rounded-xl" />
+            ) : (
+              <iframe
+                className="w-full aspect-video rounded-xl"
+                src={getYouTubeEmbedUrl(selectedMedia.mediaUrl)}
+                allowFullScreen
+              />
+            )}
+            <p className="text-white text-center mt-3">{selectedMedia.title}</p>
+          </div>
+        </div>
+      )}
 
       {/* 공지사항 & 우리 이야기 */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-8">

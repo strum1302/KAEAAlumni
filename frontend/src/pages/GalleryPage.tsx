@@ -4,7 +4,7 @@ import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import { galleryApi, eventsApi } from '../api'
 import { useAuthStore } from '../store/authStore'
-import { getYouTubeThumbnail } from '../utils/youtube'
+import { getYouTubeEmbedUrl, getYouTubeThumbnail } from '../utils/youtube'
 import Pagination from '../components/common/Pagination'
 import type { EventList, GalleryItem, PagedResult } from '../types'
 
@@ -108,7 +108,7 @@ export default function GalleryPage() {
             ) : (
               <iframe
                 className="w-full aspect-video rounded-xl"
-                src={selected.mediaUrl.replace('watch?v=', 'embed/')}
+                src={getYouTubeEmbedUrl(selected.mediaUrl)}
                 allowFullScreen
               />
             )}
