@@ -41,6 +41,7 @@ public class AppDbContext : DbContext
             e.Property(m => m.Role).HasColumnName("role").HasMaxLength(30).HasConversion<string>();
             e.Property(m => m.Bio).HasColumnName("bio");
             e.Property(m => m.OfficerTitle).HasColumnName("officer_title").HasMaxLength(50);
+            e.Property(m => m.IsActive).HasColumnName("is_active");
             e.Property(m => m.CreatedAt).HasColumnName("created_at");
             // Auth 확장 컬럼 (schema.sql 기본 DDL에는 없음 — db/schema.sql 하단 ALTER TABLE 참고)
             e.Property(m => m.PasswordHash).HasColumnName("password_hash").HasMaxLength(255);

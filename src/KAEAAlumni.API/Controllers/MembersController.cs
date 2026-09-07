@@ -55,25 +55,28 @@ public class MembersController : ControllerBase
         return NoContent();
     }
 
-    // 전체 회원 목록 (Officer/Admin)
+    // 전체 회원 목록 (Officer/Admin) - includeInactive=true 시 등록 취소된 회원도 함께 조회
     [Authorize(Roles = "OFFICER,ADMIN")]
     [HttpGet]
-    public async Task<IActionResult> GetAllMembers()
+    public async Task<IActionResult> GetAllMembers([FromQuery] bool includeInactive = false)
     {
         var members = await _memberRepo.GetAllAsync();
-        var result = members.Select(m => new
-        {
-            m.Id, m.Name, m.Email, m.EntryYear, m.Major, m.Degree,
-            m.City, m.State, Role = m.Role.ToString(), m.OfficerTitle, m.CreatedAt
-        });
+        var result = members
+            .Where(m => includeInactive || m.IsActive)
+            .Select(m => new
+            {
+                m.Id, m.Name, m.Email, m.EntryYear, m.Major, m.Degree,
+                m.City, m.State, Role = m.Role.ToString(), m.OfficerTitle, m.IsActive, m.CreatedAt
+            });
         return Ok(result);
     }
 
-    // 임원진 목록 (공개 - 교우회 소개 페이지)
+    // 임원진 목록 (공개 - 교우회 소개 페이지) - 활성 회원만 노출
     [HttpGet("officers")]
     public async Task<IActionResult> GetOfficers()
     {
-        var officers = await _memberRepo.FindAsync(m => m.OfficerTitle != null && m.OfficerTitle != "");
+        var officers = await _memberRepo.FindAsync(
+            m => m.OfficerTitle != null && m.OfficerTitle != "" && m.IsActive);
         var result = officers.Select(m => new
         {
             m.Id, m.Name, m.EntryYear, m.Major, m.OfficerTitle
@@ -108,5 +111,27 @@ public class MembersController : ControllerBase
         member.OfficerTitle = string.IsNullOrWhiteSpace(dto.OfficerTitle) ? null : dto.OfficerTitle.Trim();
         await _memberRepo.SaveChangesAsync();
         return Ok(new { message = $"{member.Name} 님의 직책이 변경되었습니다." });
+    }
+
+    // 회원 등록 취소 / 재등록 (Admin 전용) - 실제로 삭제하지 않고 is_active만 변경 (soft delete)
+    // 비활성 회원은 로그인이 차단되고, 임원진/기본 목록에서는 제외됩니다.
+    [Authorize(Roles = "ADMIN")]
+    [HttpPut("{id}/active")]
+    public async Task<IActionResult> UpdateActive(Guid id, [FromBody] UpdateMemberActiveDto dto)
+    {
+        var currentId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        if (id == currentId && !dto.IsActive)
+            return BadRequest(new { message = "본인 계정은 이 화면에서 비활성화할 수 없습니다." });
+
+        var member = await _memberRepo.GetByIdAsync(id)
+            ?? throw new KeyNotFoundException("회원을 찾을 수 없습니다.");
+
+        member.IsActive = dto.IsActive;
+        await _memberRepo.SaveChangesAsync();
+
+        var message = dto.IsActive
+            ? $"{member.Name} 님이 다시 활성화되었습니다."
+            : $"{member.Name} 님의 등록이 취소되었습니다.";
+        return Ok(new { message });
     }
 }

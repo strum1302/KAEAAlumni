@@ -16,6 +16,7 @@ interface MemberRow {
   state?: string
   role: MemberRole
   officerTitle?: string | null
+  isActive: boolean
   createdAt: string
 }
 
@@ -39,10 +40,12 @@ export default function AdminMembersPage() {
   const [search, setSearch] = useState('')
   const [savingId, setSavingId] = useState<string | null>(null)
   const [savingOfficerId, setSavingOfficerId] = useState<string | null>(null)
+  const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [includeInactive, setIncludeInactive] = useState(false)
 
   const { data: members, isLoading } = useQuery({
-    queryKey: ['members', 'all'],
-    queryFn: async () => (await membersApi.getAll()).data as MemberRow[],
+    queryKey: ['members', 'all', includeInactive],
+    queryFn: async () => (await membersApi.getAll(includeInactive)).data as MemberRow[],
   })
 
   const filtered = (members ?? []).filter((m) => {
@@ -99,6 +102,37 @@ export default function AdminMembersPage() {
     }
   }
 
+  const handleToggleActive = async (targetMember: MemberRow) => {
+    const nextActive = !targetMember.isActive
+
+    if (targetMember.id === currentMember?.id && !nextActive) {
+      toast.error('본인 계정은 이 화면에서 비활성화할 수 없습니다.')
+      return
+    }
+
+    const confirmed = window.confirm(
+      nextActive
+        ? `${targetMember.name} (${targetMember.email}) 님을 다시 활성화하시겠습니까?`
+        : `${targetMember.name} (${targetMember.email}) 님의 교우 등록을 취소(비활성화)하시겠습니까?\n` +
+          '데이터는 삭제되지 않으며, 언제든 다시 활성화할 수 있습니다. 비활성화된 계정은 로그인이 차단됩니다.'
+    )
+    if (!confirmed) return
+
+    setTogglingId(targetMember.id)
+    try {
+      await membersApi.setActive(targetMember.id, nextActive)
+      toast.success(nextActive
+        ? `${targetMember.name} 님이 다시 활성화되었습니다.`
+        : `${targetMember.name} 님의 등록이 취소되었습니다.`)
+      queryClient.invalidateQueries({ queryKey: ['members', 'all'] })
+      queryClient.invalidateQueries({ queryKey: ['members', 'officers'] })
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || '처리에 실패했습니다.')
+    } finally {
+      setTogglingId(null)
+    }
+  }
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
@@ -108,17 +142,28 @@ export default function AdminMembersPage() {
             회원의 역할(MEMBER / YT / OFFICER / ADMIN)을 변경할 수 있습니다.
           </p>
         </div>
-        <input
-          type="text"
-          placeholder="이름 또는 이메일 검색"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full sm:w-64"
-        />
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <label className="flex items-center gap-1.5 text-sm text-gray-600 whitespace-nowrap">
+            <input
+              type="checkbox"
+              checked={includeInactive}
+              onChange={(e) => setIncludeInactive(e.target.checked)}
+              className="rounded border-gray-300"
+            />
+            등록취소 회원 포함 전체조회
+          </label>
+          <input
+            type="text"
+            placeholder="이름 또는 이메일 검색"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-full sm:w-64"
+          />
+        </div>
       </div>
 
       <div className="bg-white border border-gray-100 rounded-xl overflow-x-auto">
-        <table className="w-full text-sm min-w-[720px]">
+        <table className="w-full text-sm min-w-[820px]">
           <thead className="bg-gray-50 text-gray-500">
             <tr>
               <th className="text-left px-4 py-2">성명</th>
@@ -128,18 +173,22 @@ export default function AdminMembersPage() {
               <th className="text-left px-4 py-2">현재 권한</th>
               <th className="text-left px-4 py-2">권한 변경</th>
               <th className="text-left px-4 py-2">임원 직책</th>
+              <th className="text-left px-4 py-2"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {isLoading && (
-              <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-400">불러오는 중...</td></tr>
+              <tr><td colSpan={8} className="px-4 py-6 text-center text-gray-400">불러오는 중...</td></tr>
             )}
             {!isLoading && filtered.map((m) => (
-              <tr key={m.id}>
+              <tr key={m.id} className={m.isActive ? '' : 'bg-gray-50 text-gray-400'}>
                 <td className="px-4 py-2 whitespace-nowrap">
                   {m.name}
                   {m.id === currentMember?.id && (
                     <span className="ml-1.5 text-[11px] text-gray-400">(나)</span>
+                  )}
+                  {!m.isActive && (
+                    <span className="ml-1.5 text-[11px] text-red-400">(등록취소됨)</span>
                   )}
                 </td>
                 <td className="px-4 py-2 text-gray-500">{m.email}</td>
@@ -178,10 +227,23 @@ export default function AdminMembersPage() {
                     </option>
                   </select>
                 </td>
+                <td className="px-4 py-2">
+                  {m.id !== currentMember?.id && (
+                    <button
+                      onClick={() => handleToggleActive(m)}
+                      disabled={togglingId === m.id}
+                      className={`text-xs hover:underline disabled:opacity-50 ${
+                        m.isActive ? 'text-red-500 hover:text-red-700' : 'text-crimson hover:text-crimson-800'
+                      }`}
+                    >
+                      {togglingId === m.id ? '처리 중...' : m.isActive ? '등록취소' : '재활성화'}
+                    </button>
+                  )}
+                </td>
               </tr>
             ))}
             {!isLoading && !filtered.length && (
-              <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-400">검색 결과가 없습니다.</td></tr>
+              <tr><td colSpan={8} className="px-4 py-6 text-center text-gray-400">검색 결과가 없습니다.</td></tr>
             )}
           </tbody>
         </table>

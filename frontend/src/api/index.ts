@@ -52,11 +52,12 @@ export const authApi = {
 export const membersApi = {
   getMe: () => api.get('/members/me'),
   updateMe: (data: object) => api.put('/members/me', data),
-  getAll: () => api.get('/members'),
+  getAll: (includeInactive?: boolean) => api.get('/members', { params: { includeInactive } }),
   getOfficers: () => api.get('/members/officers'),
   updateRole: (id: string, role: string) => api.put(`/members/${id}/role`, { role }),
   updateOfficerTitle: (id: string, officerTitle: string | null) =>
     api.put(`/members/${id}/officer-title`, { officerTitle }),
+  setActive: (id: string, isActive: boolean) => api.put(`/members/${id}/active`, { isActive }),
 }
 
 // ── Events API ────────────────────────────────────

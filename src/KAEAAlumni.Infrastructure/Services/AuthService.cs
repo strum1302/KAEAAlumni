@@ -63,6 +63,9 @@ public class AuthService : IAuthService
         if (!BCrypt.Net.BCrypt.Verify(dto.Password, member.PasswordHash))
             throw new UnauthorizedAccessException("이메일 또는 비밀번호가 올바르지 않습니다.");
 
+        if (!member.IsActive)
+            throw new UnauthorizedAccessException("등록이 취소된 계정입니다. 교우회 관리자에게 문의해주세요.");
+
         member.RefreshToken = GenerateRefreshToken();
         member.RefreshTokenExpiry = DateTime.UtcNow.AddDays(30);
         await _memberRepo.SaveChangesAsync();
@@ -78,6 +81,9 @@ public class AuthService : IAuthService
 
         if (member.RefreshTokenExpiry < DateTime.UtcNow)
             throw new UnauthorizedAccessException("리프레시 토큰이 만료되었습니다.");
+
+        if (!member.IsActive)
+            throw new UnauthorizedAccessException("등록이 취소된 계정입니다. 교우회 관리자에게 문의해주세요.");
 
         member.RefreshToken = GenerateRefreshToken();
         member.RefreshTokenExpiry = DateTime.UtcNow.AddDays(30);

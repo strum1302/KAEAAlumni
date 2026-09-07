@@ -148,6 +148,10 @@ ALTER TABLE members ADD COLUMN IF NOT EXISTS refresh_token_expiry TIMESTAMP WITH
 -- NULL이면 일반 회원, 값이 있으면 "회장"/"부회장"/"총무"/"회계"/"YT회장" 등 임원 직책으로 표시됩니다.
 ALTER TABLE members ADD COLUMN IF NOT EXISTS officer_title VARCHAR(50);
 
+-- 회원 등록 취소(soft delete)용 컬럼. 실제 행은 삭제하지 않고 false로만 바꿉니다.
+-- false인 회원은 로그인이 차단되고, 기본 회원 목록/임원진 목록에서 제외됩니다.
+ALTER TABLE members ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;
+
 -- ------------------------------------------------------------------------------
 -- 7. 테스트용 시드 데이터 (Seed Data)
 -- ------------------------------------------------------------------------------

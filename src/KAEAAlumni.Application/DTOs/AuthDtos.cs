@@ -54,6 +54,8 @@ public record UpdateMemberRoleDto(string Role);
 
 public record UpdateMemberOfficerTitleDto(string? OfficerTitle);
 
+public record UpdateMemberActiveDto(bool IsActive);
+
 public record UpdateMemberProfileDto(
     string CellPhone,
     string? HomePhone,
