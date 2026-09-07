@@ -126,6 +126,27 @@ export default function Layout() {
                   {link.label}
                 </Link>
               ))}
+              {isAuthenticated && (
+                <div className="pt-2 mt-1 border-t border-gray-100 space-y-1">
+                  <Link to="/profile" onClick={() => setMobileMenuOpen(false)}
+                    className="block py-2 px-3 rounded text-sm font-medium text-gray-700 hover:text-crimson hover:bg-crimson-50">
+                    {member?.name} 님 (마이페이지)
+                  </Link>
+                  {canManage && (
+                    <Link to="/admin/payments" onClick={() => setMobileMenuOpen(false)}
+                      className="block py-2 px-3 rounded text-sm font-medium text-crimson bg-crimson-50">
+                      관리자 대시보드
+                    </Link>
+                  )}
+                  {member?.role === 'ADMIN' && (
+                    <Link to="/admin/members" onClick={() => setMobileMenuOpen(false)}
+                      className="block py-2 px-3 rounded text-sm font-medium text-crimson bg-crimson-50">
+                      교우 권한 관리
+                    </Link>
+                  )}
+                </div>
+              )}
+
               <div className="flex gap-2 pt-2 border-t border-gray-100">
                 {isAuthenticated ? (
                   <button onClick={handleLogout}
