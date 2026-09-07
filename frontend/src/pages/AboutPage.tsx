@@ -3,10 +3,11 @@ import { articlesApi } from '../api'
 import type { ArticleList, PagedResult } from '../types'
 
 const officers = [
-  { role: '회장', name: '김고대 (83 전산학과)' },
-  { role: '부회장', name: '이호랑 (92 경영학과)' },
-  { role: '사무총장', name: '박교우 (78 영문학과)' },
-  { role: '재무', name: '최시카고 (95 화학공학과)' },
+  { role: '회장', name: '오승화 (87 독어독문)' },
+  { role: '부회장', name: '정승원 (94 화학)' },
+  { role: '총무', name: '두면철 (98 전산)' },
+  { role: '회계', name: '민혜실 (02 식공)' },
+  { role: 'YT회장', name: '신예리 (04 불문)' },
 ]
 
 export default function AboutPage() {
@@ -32,7 +33,7 @@ export default function AboutPage() {
 
       <section>
         <h2 className="text-lg font-bold text-gray-800 mb-3">임원진 조직도</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           {officers.map((o) => (
             <div key={o.role} className="bg-white border border-gray-100 rounded-xl p-4 text-center">
               <p className="text-xs text-crimson font-semibold mb-1">{o.role}</p>
