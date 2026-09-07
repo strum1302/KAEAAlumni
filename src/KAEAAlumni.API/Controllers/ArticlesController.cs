@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace KAEAAlumni.API.Controllers;
 
-// ── 커뮤니티: 공지사항(Notice) / 우리 이야기(Story) /
+// ── 게시판: 공지사항(Notice) / 우리 이야기(Story) / 자유게시판(Free) /
 //    미중서부 장학기금(Fellowship) / 연혁(History) ───────
 [ApiController]
 [Route("api/[controller]")]
@@ -64,7 +64,7 @@ public class ArticlesController : ControllerBase
     public async Task<IActionResult> CreateArticle([FromBody] CreateArticleDto dto)
     {
         if (!Enum.TryParse<ArticleCategory>(dto.Category, true, out var category))
-            return BadRequest(new { message = "유효하지 않은 카테고리입니다. (NOTICE, STORY, FELLOWSHIP, HISTORY)" });
+            return BadRequest(new { message = "유효하지 않은 카테고리입니다. (NOTICE, STORY, FREE, FELLOWSHIP, HISTORY)" });
 
         var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
         if (category is ArticleCategory.NOTICE or ArticleCategory.FELLOWSHIP or ArticleCategory.HISTORY

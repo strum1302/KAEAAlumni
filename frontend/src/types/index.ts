@@ -68,7 +68,7 @@ export interface EventRsvp {
 }
 
 // ── Article ─────────────────────────────────────────────
-export type ArticleCategory = 'NOTICE' | 'STORY' | 'FELLOWSHIP' | 'HISTORY'
+export type ArticleCategory = 'NOTICE' | 'STORY' | 'FREE' | 'FELLOWSHIP' | 'HISTORY'
 
 export interface ArticleList {
   id: string

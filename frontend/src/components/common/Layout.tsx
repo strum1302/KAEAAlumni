@@ -19,7 +19,7 @@ export default function Layout() {
     { to: '/about', label: '교우회 소개' },
     { to: '/events', label: '행사' },
     { to: '/gallery', label: '갤러리' },
-    { to: '/community/notice', label: '커뮤니티' },
+    { to: '/community/notice', label: '게시판' },
     { to: '/giving', label: '회비안내' },
   ]
 

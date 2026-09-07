@@ -1,16 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import { articlesApi } from '../api'
 import { useAuthStore } from '../store/authStore'
+import { fileToResizedDataUrl } from '../utils/image'
 import Pagination from '../components/common/Pagination'
 import type { ArticleCategory, ArticleList, PagedResult } from '../types'
 
 const TABS: { key: ArticleCategory; label: string }[] = [
   { key: 'NOTICE', label: '공지사항' },
   { key: 'STORY', label: '우리 이야기' },
+  { key: 'FREE', label: '자유게시판' },
   { key: 'FELLOWSHIP', label: '미중서부 장학기금' },
 ]
 
@@ -23,10 +25,12 @@ export default function CommunityPage() {
   const [showWrite, setShowWrite] = useState(false)
   const [form, setForm] = useState({ title: '', content: '' })
   const [page, setPage] = useState(1)
+  const [insertingImage, setInsertingImage] = useState(false)
+  const contentRef = useRef<HTMLTextAreaElement>(null)
   const activeCategory = category.toUpperCase() as ArticleCategory
 
   const canWriteNotice = member?.role === 'OFFICER' || member?.role === 'ADMIN'
-  const canWrite = activeCategory === 'STORY' ? isAuthenticated : canWriteNotice
+  const canWrite = (activeCategory === 'STORY' || activeCategory === 'FREE') ? isAuthenticated : canWriteNotice
 
   useEffect(() => setPage(1), [activeCategory])
 
@@ -34,6 +38,29 @@ export default function CommunityPage() {
     queryKey: ['articles', activeCategory, page],
     queryFn: async () => (await articlesApi.getList({ category: activeCategory, page, pageSize: PAGE_SIZE })).data as PagedResult<ArticleList>,
   })
+
+  // 커서 위치에 사진을 삽입합니다. 본문 텍스트 안에 [[img:...]] 마커로 끼워 넣고,
+  // 상세 페이지에서는 이 마커를 실제 사진으로 바꿔서 보여줍니다.
+  const insertImage = async (file: File) => {
+    setInsertingImage(true)
+    try {
+      const dataUrl = await fileToResizedDataUrl(file, 800, 800, 0.75)
+      const marker = `\n[[img:${dataUrl}]]\n`
+      const el = contentRef.current
+      const pos = el?.selectionStart ?? form.content.length
+      const newContent = form.content.slice(0, pos) + marker + form.content.slice(pos)
+      setForm((f) => ({ ...f, content: newContent }))
+      requestAnimationFrame(() => {
+        const newPos = pos + marker.length
+        el?.focus()
+        el?.setSelectionRange(newPos, newPos)
+      })
+    } catch (err: any) {
+      toast.error(err?.message || '사진 삽입에 실패했습니다.')
+    } finally {
+      setInsertingImage(false)
+    }
+  }
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -53,7 +80,7 @@ export default function CommunityPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-800 mb-4">커뮤니티</h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-4">게시판</h1>
 
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div className="flex gap-2">
@@ -79,7 +106,19 @@ export default function CommunityPage() {
           <input required placeholder="제목" value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-          <textarea required rows={5} placeholder="내용" value={form.content}
+          <div className="flex items-center gap-2">
+            <label className={`text-xs font-medium border border-crimson text-crimson rounded-lg px-3 py-1.5 hover:bg-crimson-50 cursor-pointer ${insertingImage ? 'opacity-50 pointer-events-none' : ''}`}>
+              {insertingImage ? '처리 중...' : '+ 사진 삽입'}
+              <input type="file" accept="image/*" className="hidden" disabled={insertingImage}
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) insertImage(file)
+                  e.target.value = ''
+                }} />
+            </label>
+            <span className="text-xs text-gray-400">커서 위치에 사진이 삽입됩니다.</span>
+          </div>
+          <textarea ref={contentRef} required rows={8} placeholder="내용" value={form.content}
             onChange={(e) => setForm({ ...form, content: e.target.value })}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
           <button type="submit" className="bg-crimson text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-crimson-800">

@@ -4,7 +4,7 @@ using KAEAAlumni.Domain.Enums;
 namespace KAEAAlumni.Domain.Entities;
 
 // ── 게시판/공지/아카이브 (articles) ───────────────────────
-// NOTICE(공지사항) / STORY(우리 이야기) / FELLOWSHIP(장학기금) / HISTORY(연혁)
+// NOTICE(공지사항) / STORY(우리 이야기) / FELLOWSHIP(장학기금) / HISTORY(연혁) / FREE(자유게시판)
 public class Article : BaseEntity
 {
     public ArticleCategory Category { get; set; }

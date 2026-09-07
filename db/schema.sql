@@ -76,7 +76,7 @@ CREATE INDEX idx_rsvps_event_id ON event_rsvps(event_id);
 -- ------------------------------------------------------------------------------
 CREATE TABLE articles (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    category VARCHAR(50) NOT NULL,              -- NOTICE, STORY, FELLOWSHIP, HISTORY
+    category VARCHAR(50) NOT NULL,              -- NOTICE, STORY, FREE, FELLOWSHIP, HISTORY
     title VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
     author_name VARCHAR(100) NOT NULL,

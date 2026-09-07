@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { articlesApi } from '../api'
+import ArticleContent from '../components/common/ArticleContent'
 import type { ArticleDetail } from '../types'
 
 export default function ArticleDetailPage() {
@@ -22,8 +23,8 @@ export default function ArticleDetailPage() {
       <div className="text-xs text-gray-400 mb-6">
         {article.authorName} · {format(new Date(article.createdAt), 'yyyy.MM.dd')} · 조회 {article.viewCount}
       </div>
-      <div className="bg-white border border-gray-100 rounded-xl p-6 whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
-        {article.content}
+      <div className="bg-white border border-gray-100 rounded-xl p-6 text-sm text-gray-700 leading-relaxed">
+        <ArticleContent content={article.content} />
       </div>
 
       {article.galleryItems.length > 0 && (
