@@ -16,7 +16,7 @@ export default function Layout() {
 
   const navLinks = [
     { to: '/', label: '홈' },
-    { to: '/about', label: '소개' },
+    { to: '/about', label: '교우회 소개' },
     { to: '/events', label: '행사' },
     { to: '/gallery', label: '갤러리' },
     { to: '/community/notice', label: '커뮤니티' },

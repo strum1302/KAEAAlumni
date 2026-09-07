@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { articlesApi, membersApi } from '../api'
+import { articlesApi, membersApi, galleryApi } from '../api'
 import { useAuthStore } from '../store/authStore'
-import type { ArticleDetail, ArticleList, Officer, PagedResult } from '../types'
+import { getYouTubeEmbedUrl, getYouTubeThumbnail } from '../utils/youtube'
+import type { ArticleDetail, ArticleList, GalleryItem, Officer, PagedResult } from '../types'
 
 const HISTORY_TITLE = '교우회 연혁'
 
@@ -61,6 +62,13 @@ export default function AboutPage() {
     queryFn: async () => (await articlesApi.getById(historyId!)).data as ArticleDetail,
     enabled: !!historyId,
   })
+
+  // 교가/응원가 아카이브 — 특정 행사와 무관하게(hasEvent: false) 갤러리에 등록된 영상을 그대로 보여줍니다.
+  const { data: archiveVideos } = useQuery({
+    queryKey: ['gallery', 'about', 'archive'],
+    queryFn: async () => (await galleryApi.getList({ hasEvent: false, mediaType: 'VIDEO', pageSize: 12 })).data as PagedResult<GalleryItem>,
+  })
+  const [selectedVideo, setSelectedVideo] = useState<GalleryItem | null>(null)
 
   const [editingHistory, setEditingHistory] = useState(false)
   const [historyDraft, setHistoryDraft] = useState('')
@@ -193,11 +201,52 @@ export default function AboutPage() {
 
       <section>
         <h2 className="text-lg font-bold text-gray-800 mb-3">교가 및 응원가 아카이브</h2>
-        <div className="bg-white border border-gray-100 rounded-xl p-6 text-sm text-gray-600">
-          교가/응원가 음원 및 가사는 준비 중입니다. 관리자 페이지에서 갤러리에 영상으로 등록하면
-          이 섹션에 자동으로 노출되도록 확장할 수 있습니다.
-        </div>
+        {archiveVideos?.items.length ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {archiveVideos.items.map((v) => {
+              const thumb = v.thumbnailUrl || getYouTubeThumbnail(v.mediaUrl)
+              return (
+                <button key={v.id} onClick={() => setSelectedVideo(v)} className="text-left group">
+                  <div className="rounded-xl overflow-hidden bg-gray-100 aspect-video relative">
+                    {thumb ? (
+                      <>
+                        <img src={thumb} alt={v.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/25 text-white text-2xl">▶</div>
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-800 text-white text-sm px-2 text-center">
+                        ▶ {v.title}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-700 mt-1.5 truncate">{v.title}</p>
+                </button>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="bg-white border border-gray-100 rounded-xl p-6 text-sm text-gray-600">
+            교가/응원가 영상은 준비 중입니다. 갤러리 메뉴에서 "연결된 행사 없음"으로 영상을 등록하면
+            이 섹션에 자동으로 노출됩니다.
+          </div>
+        )}
       </section>
+
+      {selectedVideo && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4" onClick={() => setSelectedVideo(null)}>
+          <div className="max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
+            <iframe
+              className="w-full aspect-video rounded-xl"
+              src={getYouTubeEmbedUrl(selectedVideo.mediaUrl)}
+              allowFullScreen
+            />
+            <p className="text-white text-center mt-3">{selectedVideo.title}</p>
+            {selectedVideo.description && (
+              <p className="text-gray-300 text-sm text-center mt-1">{selectedVideo.description}</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
