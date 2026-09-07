@@ -83,6 +83,20 @@ public class ArticlesController : ControllerBase
         return CreatedAtAction(nameof(GetArticle), new { id = article.Id }, article.Id);
     }
 
+    // 글 수정 (Officer/Admin 전용 - 연혁/공지 등 관리용)
+    [Authorize(Roles = "OFFICER,ADMIN")]
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateArticle(Guid id, [FromBody] UpdateArticleDto dto)
+    {
+        var article = await _articleRepo.GetByIdAsync(id);
+        if (article == null) return NotFound();
+
+        article.Title = dto.Title;
+        article.Content = dto.Content;
+        await _articleRepo.SaveChangesAsync();
+        return NoContent();
+    }
+
     [Authorize(Roles = "OFFICER,ADMIN")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteArticle(Guid id)

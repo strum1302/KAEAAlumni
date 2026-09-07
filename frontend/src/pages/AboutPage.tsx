@@ -1,20 +1,94 @@
-import { useQuery } from '@tanstack/react-query'
-import { articlesApi } from '../api'
-import type { ArticleList, PagedResult } from '../types'
+import { useEffect, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import toast from 'react-hot-toast'
+import { articlesApi, membersApi } from '../api'
+import { useAuthStore } from '../store/authStore'
+import type { ArticleDetail, ArticleList, Officer, PagedResult } from '../types'
 
-const officers = [
-  { role: '회장', name: '오승화 (87 독어독문)' },
-  { role: '부회장', name: '정승원 (94 화학)' },
-  { role: '총무', name: '두명철 (98 컴퓨터교육)' },
-  { role: '회계', name: '민혜실 (02 식공)' },
-  { role: 'YT회장', name: '신예리 (04 불문)' },
-]
+const HISTORY_TITLE = '교우회 연혁'
+
+const DEFAULT_HISTORY_CONTENT = `"최대 50학번 이상 차이나는 선후배들이 객지에서 서로에게 든든한 버팀목이 되어줍니다."
+
+고려대 중서부교우회는 1950년도 중반에 창립돼 고 민병기 초대회장 이래 현 37대 오승화 회장에 이르기까지 140여명의 동문들이 활발하게 친목을 도모하고 있습니다.
+
+최고참인 53학번 대선배부터 젊은 15학번까지 다양한 연령층의 교우들이 모여 여름 야유회, 겨울 송년회, 총장배 골프대회, 4~10월 월별 골프대회, 고연전 골프대회 등 연례행사를 갖고 있으며 1990년대 이후 학번들이 모이는 '젊은 고대(YT)' 소모임도 있습니다.
+
+선후배간의 끈끈한 유대관계를 가진 고대 교우회는 약 80명이 활발히 참여하고 있습니다. 모두 모국을 떠나 미국에 살면서 자유롭게 나와서 반갑게 얼굴도 보고, 도움을 주고 받으며 우정을 쌓고 있습니다. 점점 나이 들어가시는 고학번 선배님들을 더욱 챙겨드리고 소외된 부분이 없이 모두가 함께 화합할 수 있는 교우회가 되도록 계속 노력하고 있습니다. 지금처럼 단란한 교우회 속에서 선배는 후배를 사랑하고, 후배는 선배를 공경하면서 서로에게 든든한 힘이 되어주고 있습니다.`
+
+// 임원진 카드 정렬 순서 (지정되지 않은 직책은 뒤에 등록순으로 붙습니다)
+const OFFICER_ORDER = ['회장', '부회장', '총무', '회계', 'YT회장', '골프회장']
+
+function sortOfficers(officers: Officer[]) {
+  return [...officers].sort((a, b) => {
+    const ai = OFFICER_ORDER.indexOf(a.officerTitle)
+    const bi = OFFICER_ORDER.indexOf(b.officerTitle)
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi)
+  })
+}
+
+function renderHistoryParagraphs(content: string) {
+  return content.split(/\n\s*\n/).filter(Boolean).map((para, i) => {
+    const isQuote = /^['"“]/.test(para.trim())
+    return isQuote ? (
+      <blockquote key={i} className="border-l-4 border-crimson pl-4 text-crimson-900 font-medium italic">
+        {para.trim()}
+      </blockquote>
+    ) : (
+      <p key={i} className="text-sm text-gray-600 leading-relaxed">{para.trim()}</p>
+    )
+  })
+}
 
 export default function AboutPage() {
-  const { data: history } = useQuery({
-    queryKey: ['articles', 'HISTORY'],
-    queryFn: async () => (await articlesApi.getList({ category: 'HISTORY', pageSize: 10 })).data as PagedResult<ArticleList>,
+  const { member } = useAuthStore()
+  const isAdmin = member?.role === 'ADMIN'
+  const queryClient = useQueryClient()
+
+  const { data: officers } = useQuery({
+    queryKey: ['members', 'officers'],
+    queryFn: async () => (await membersApi.getOfficers()).data as Officer[],
   })
+
+  const { data: historyList } = useQuery({
+    queryKey: ['articles', 'HISTORY'],
+    queryFn: async () => (await articlesApi.getList({ category: 'HISTORY', pageSize: 1 })).data as PagedResult<ArticleList>,
+  })
+  const historyId = historyList?.items[0]?.id
+
+  const { data: historyDetail } = useQuery({
+    queryKey: ['articles', 'HISTORY', historyId],
+    queryFn: async () => (await articlesApi.getById(historyId!)).data as ArticleDetail,
+    enabled: !!historyId,
+  })
+
+  const [editingHistory, setEditingHistory] = useState(false)
+  const [historyDraft, setHistoryDraft] = useState('')
+  const [savingHistory, setSavingHistory] = useState(false)
+
+  useEffect(() => {
+    if (!editingHistory) setHistoryDraft(historyDetail?.content ?? DEFAULT_HISTORY_CONTENT)
+  }, [historyDetail, editingHistory])
+
+  const saveHistory = async () => {
+    setSavingHistory(true)
+    try {
+      if (historyId) {
+        await articlesApi.update(historyId, { title: HISTORY_TITLE, content: historyDraft })
+      } else {
+        await articlesApi.create({
+          category: 'HISTORY', title: HISTORY_TITLE, content: historyDraft,
+          authorName: member?.name || '관리자',
+        })
+      }
+      toast.success('연혁이 저장되었습니다.')
+      queryClient.invalidateQueries({ queryKey: ['articles', 'HISTORY'] })
+      setEditingHistory(false)
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || '저장에 실패했습니다.')
+    } finally {
+      setSavingHistory(false)
+    }
+  }
 
   return (
     <div className="space-y-10">
@@ -33,50 +107,65 @@ export default function AboutPage() {
 
       <section>
         <h2 className="text-lg font-bold text-gray-800 mb-3">임원진 조직도</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-          {officers.map((o) => (
-            <div key={o.role} className="bg-white border border-gray-100 rounded-xl p-4 text-center">
-              <p className="text-xs text-crimson font-semibold mb-1">{o.role}</p>
-              <p className="text-sm text-gray-700">{o.name}</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+          {sortOfficers(officers ?? []).map((o) => (
+            <div key={o.id} className="bg-white border border-gray-100 rounded-xl p-4 text-center">
+              <p className="text-xs text-crimson font-semibold mb-1">{o.officerTitle}</p>
+              <p className="text-sm text-gray-700">{o.name} ({o.entryYear} {o.major})</p>
             </div>
           ))}
+          {!officers?.length && (
+            <p className="col-span-full text-sm text-gray-400 text-center py-4">
+              등록된 임원 정보가 없습니다.
+              {isAdmin && ' 교우 권한 관리 페이지에서 회원의 임원 직책을 지정할 수 있습니다.'}
+            </p>
+          )}
         </div>
       </section>
 
       <section>
-        <h2 className="text-lg font-bold text-gray-800 mb-3">연혁</h2>
-        <div className="bg-white border border-gray-100 rounded-xl p-6 space-y-4">
-          <blockquote className="border-l-4 border-crimson pl-4 text-crimson-900 font-medium italic">
-            "최대 50학번 이상 차이나는 선후배들이 객지에서 서로에게 든든한 버팀목이 되어줍니다."
-          </blockquote>
-          <p className="text-sm text-gray-600 leading-relaxed">
-            고려대 중서부교우회는 1950년도 중반에 창립돼 고 민병기 초대회장 이래 현 37대 오승화
-            회장에 이르기까지 140여명의 동문들이 활발하게 친목을 도모하고 있습니다.
-          </p>
-          <p className="text-sm text-gray-600 leading-relaxed">
-            최고참인 53학번 대선배부터 젊은 15학번까지 다양한 연령층의 교우들이 모여 여름 야유회,
-            겨울 송년회, 총장배 골프대회, 4~10월 월별 골프대회, 고연전 골프대회 등 연례행사를 갖고
-            있으며 1990년대 이후 학번들이 모이는 '젊은 고대(YT)' 소모임도 있습니다.
-          </p>
-          <p className="text-sm text-gray-600 leading-relaxed">
-            선후배간의 끈끈한 유대관계를 가진 고대 교우회는 약 80명이 활발히 참여하고 있습니다.
-            모두 모국을 떠나 미국에 살면서 자유롭게 나와서 반갑게 얼굴도 보고, 도움을 주고 받으며
-            우정을 쌓고 있습니다. 점점 나이 들어가시는 고학번 선배님들을 더욱 챙겨드리고 소외된
-            부분이 없이 모두가 함께 화합할 수 있는 교우회가 되도록 계속 노력하고 있습니다. 지금처럼
-            단란한 교우회 속에서 선배는 후배를 사랑하고, 후배는 선배를 공경하면서 서로에게 든든한
-            힘이 되어주고 있습니다.
-          </p>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-bold text-gray-800">연혁</h2>
+          {isAdmin && !editingHistory && (
+            <button
+              onClick={() => setEditingHistory(true)}
+              className="text-sm text-crimson font-medium px-3 py-1.5 bg-crimson-50 rounded hover:bg-crimson-100"
+            >
+              연혁 편집
+            </button>
+          )}
         </div>
 
-        {!!history?.items.length && (
-          <ul className="space-y-2 mt-4">
-            {history.items.map((a) => (
-              <li key={a.id} className="bg-white border border-gray-100 rounded-lg px-4 py-3 text-sm text-gray-700">
-                {a.title}
-              </li>
-            ))}
-          </ul>
-        )}
+        <div className="bg-white border border-gray-100 rounded-xl p-6 space-y-4">
+          {!editingHistory ? (
+            renderHistoryParagraphs(historyDetail?.content ?? DEFAULT_HISTORY_CONTENT)
+          ) : (
+            <div className="space-y-3">
+              <textarea
+                value={historyDraft}
+                onChange={(e) => setHistoryDraft(e.target.value)}
+                rows={14}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm leading-relaxed"
+              />
+              <p className="text-xs text-gray-400">문단 사이는 빈 줄로 구분하세요. 따옴표로 시작하는 문단은 인용구로 강조됩니다.</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={saveHistory}
+                  disabled={savingHistory}
+                  className="bg-crimson text-white text-sm px-4 py-2 rounded-lg hover:bg-crimson-800 disabled:opacity-50"
+                >
+                  {savingHistory ? '저장 중...' : '저장'}
+                </button>
+                <button
+                  onClick={() => { setEditingHistory(false); setHistoryDraft(historyDetail?.content ?? DEFAULT_HISTORY_CONTENT) }}
+                  className="text-sm px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </section>
 
       <section>

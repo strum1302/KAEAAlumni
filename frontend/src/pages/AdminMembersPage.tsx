@@ -15,10 +15,12 @@ interface MemberRow {
   city?: string
   state?: string
   role: MemberRole
+  officerTitle?: string | null
   createdAt: string
 }
 
 const ROLES: MemberRole[] = ['MEMBER', 'YT', 'OFFICER', 'ADMIN']
+const OFFICER_TITLES = ['회장', '부회장', '총무', '회계', 'YT회장', '골프회장']
 
 const roleLabel = (r: MemberRole) =>
   ({ MEMBER: '일반회원', YT: 'Young Tigers', OFFICER: '임원', ADMIN: '관리자' }[r])
@@ -36,6 +38,7 @@ export default function AdminMembersPage() {
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [savingOfficerId, setSavingOfficerId] = useState<string | null>(null)
 
   const { data: members, isLoading } = useQuery({
     queryKey: ['members', 'all'],
@@ -70,6 +73,32 @@ export default function AdminMembersPage() {
     }
   }
 
+  const handleOfficerTitleChange = async (targetMember: MemberRow, value: string) => {
+    let officerTitle: string | null = value
+
+    if (value === '__custom__') {
+      const input = window.prompt('직책을 입력하세요 (비워두면 취소)', targetMember.officerTitle || '')
+      if (!input) return
+      officerTitle = input.trim()
+    } else if (value === '') {
+      officerTitle = null
+    }
+
+    if ((officerTitle || '') === (targetMember.officerTitle || '')) return
+
+    setSavingOfficerId(targetMember.id)
+    try {
+      await membersApi.updateOfficerTitle(targetMember.id, officerTitle)
+      toast.success(`${targetMember.name} 님의 직책이 변경되었습니다.`)
+      queryClient.invalidateQueries({ queryKey: ['members', 'all'] })
+      queryClient.invalidateQueries({ queryKey: ['members', 'officers'] })
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || '직책 변경에 실패했습니다.')
+    } finally {
+      setSavingOfficerId(null)
+    }
+  }
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
@@ -98,11 +127,12 @@ export default function AdminMembersPage() {
               <th className="text-left px-4 py-2">지역</th>
               <th className="text-left px-4 py-2">현재 권한</th>
               <th className="text-left px-4 py-2">권한 변경</th>
+              <th className="text-left px-4 py-2">임원 직책</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {isLoading && (
-              <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">불러오는 중...</td></tr>
+              <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-400">불러오는 중...</td></tr>
             )}
             {!isLoading && filtered.map((m) => (
               <tr key={m.id}>
@@ -132,10 +162,26 @@ export default function AdminMembersPage() {
                     ))}
                   </select>
                 </td>
+                <td className="px-4 py-2">
+                  <select
+                    value={m.officerTitle && !OFFICER_TITLES.includes(m.officerTitle) ? '__custom__' : (m.officerTitle || '')}
+                    disabled={savingOfficerId === m.id}
+                    onChange={(e) => handleOfficerTitleChange(m, e.target.value)}
+                    className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm disabled:opacity-50"
+                  >
+                    <option value="">없음</option>
+                    {OFFICER_TITLES.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                    <option value="__custom__">
+                      {m.officerTitle && !OFFICER_TITLES.includes(m.officerTitle) ? m.officerTitle : '직접 입력...'}
+                    </option>
+                  </select>
+                </td>
               </tr>
             ))}
             {!isLoading && !filtered.length && (
-              <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">검색 결과가 없습니다.</td></tr>
+              <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-400">검색 결과가 없습니다.</td></tr>
             )}
           </tbody>
         </table>

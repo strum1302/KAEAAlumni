@@ -30,7 +30,7 @@ public class MembersController : ControllerBase
             member.Id, member.Name, member.Email, member.EntryYear, member.Major,
             member.Degree, member.CellPhone, member.HomePhone, member.AddressLine1,
             member.AddressLine2, member.City, member.State, member.ZipCode,
-            member.Bio, member.Role.ToString()));
+            member.Bio, member.Role.ToString(), member.OfficerTitle));
     }
 
     // 내 정보 수정
@@ -64,7 +64,19 @@ public class MembersController : ControllerBase
         var result = members.Select(m => new
         {
             m.Id, m.Name, m.Email, m.EntryYear, m.Major, m.Degree,
-            m.City, m.State, Role = m.Role.ToString(), m.CreatedAt
+            m.City, m.State, Role = m.Role.ToString(), m.OfficerTitle, m.CreatedAt
+        });
+        return Ok(result);
+    }
+
+    // 임원진 목록 (공개 - 교우회 소개 페이지)
+    [HttpGet("officers")]
+    public async Task<IActionResult> GetOfficers()
+    {
+        var officers = await _memberRepo.FindAsync(m => m.OfficerTitle != null && m.OfficerTitle != "");
+        var result = officers.Select(m => new
+        {
+            m.Id, m.Name, m.EntryYear, m.Major, m.OfficerTitle
         });
         return Ok(result);
     }
@@ -83,5 +95,18 @@ public class MembersController : ControllerBase
         member.Role = role;
         await _memberRepo.SaveChangesAsync();
         return Ok(new { message = $"{member.Name} 님의 권한이 {role}(으)로 변경되었습니다." });
+    }
+
+    // 임원 직책 변경 (Admin 전용) - 빈 문자열/null 전달 시 직책 해제
+    [Authorize(Roles = "ADMIN")]
+    [HttpPut("{id}/officer-title")]
+    public async Task<IActionResult> UpdateOfficerTitle(Guid id, [FromBody] UpdateMemberOfficerTitleDto dto)
+    {
+        var member = await _memberRepo.GetByIdAsync(id)
+            ?? throw new KeyNotFoundException("회원을 찾을 수 없습니다.");
+
+        member.OfficerTitle = string.IsNullOrWhiteSpace(dto.OfficerTitle) ? null : dto.OfficerTitle.Trim();
+        await _memberRepo.SaveChangesAsync();
+        return Ok(new { message = $"{member.Name} 님의 직책이 변경되었습니다." });
     }
 }

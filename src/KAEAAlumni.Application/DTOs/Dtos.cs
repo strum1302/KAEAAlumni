@@ -104,6 +104,11 @@ public record CreateArticleDto(
     string AuthorName
 );
 
+public record UpdateArticleDto(
+    string Title,
+    string Content
+);
+
 // ── GalleryItem ───────────────────────────────────────────
 public record GalleryItemDto(
     Guid Id,

@@ -144,6 +144,10 @@ ALTER TABLE members ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255) NOT NULL
 ALTER TABLE members ADD COLUMN IF NOT EXISTS refresh_token TEXT;
 ALTER TABLE members ADD COLUMN IF NOT EXISTS refresh_token_expiry TIMESTAMP WITH TIME ZONE;
 
+-- 임원진 조직도(교우회 소개 페이지)를 DB로 관리하기 위한 컬럼.
+-- NULL이면 일반 회원, 값이 있으면 "회장"/"부회장"/"총무"/"회계"/"YT회장" 등 임원 직책으로 표시됩니다.
+ALTER TABLE members ADD COLUMN IF NOT EXISTS officer_title VARCHAR(50);
+
 -- ------------------------------------------------------------------------------
 -- 7. 테스트용 시드 데이터 (Seed Data)
 -- ------------------------------------------------------------------------------

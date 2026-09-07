@@ -21,6 +21,7 @@ public class Member : BaseEntity
     public string Degree { get; set; } = "학사";   // 학사/석사/박사 — schema stores plain text
     public MemberRole Role { get; set; } = MemberRole.MEMBER;
     public string? Bio { get; set; }               // 교우회 메모
+    public string? OfficerTitle { get; set; }      // 임원 직책 (회장/부회장/총무/회계/YT회장 등, 없으면 null)
 
     // ── 인증(auth) 확장 컬럼 ──
     // schema.sql의 members 테이블에는 없는 컬럼입니다. ASP.NET Core 자체 JWT 로그인을

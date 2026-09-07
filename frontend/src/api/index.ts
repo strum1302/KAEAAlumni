@@ -53,7 +53,10 @@ export const membersApi = {
   getMe: () => api.get('/members/me'),
   updateMe: (data: object) => api.put('/members/me', data),
   getAll: () => api.get('/members'),
+  getOfficers: () => api.get('/members/officers'),
   updateRole: (id: string, role: string) => api.put(`/members/${id}/role`, { role }),
+  updateOfficerTitle: (id: string, officerTitle: string | null) =>
+    api.put(`/members/${id}/officer-title`, { officerTitle }),
 }
 
 // ── Events API ────────────────────────────────────
@@ -78,6 +81,8 @@ export const articlesApi = {
   getById: (id: string) => api.get(`/articles/${id}`),
   create: (data: { category: string; title: string; content: string; authorName: string }) =>
     api.post('/articles', data),
+  update: (id: string, data: { title: string; content: string }) =>
+    api.put(`/articles/${id}`, data),
   delete: (id: string) => api.delete(`/articles/${id}`),
 }
 

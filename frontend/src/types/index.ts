@@ -17,6 +17,15 @@ export interface Member {
   zipCode?: string
   bio?: string
   role: MemberRole
+  officerTitle?: string
+}
+
+export interface Officer {
+  id: string
+  name: string
+  entryYear: number
+  major: string
+  officerTitle: string
 }
 
 export interface AuthResponse {

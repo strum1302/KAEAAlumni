@@ -44,12 +44,15 @@ public record MemberDto(
     string State,
     string? ZipCode,
     string? Bio,
-    string Role
+    string Role,
+    string? OfficerTitle = null
 );
 
 public record RefreshTokenDto(string RefreshToken);
 
 public record UpdateMemberRoleDto(string Role);
+
+public record UpdateMemberOfficerTitleDto(string? OfficerTitle);
 
 public record UpdateMemberProfileDto(
     string CellPhone,
