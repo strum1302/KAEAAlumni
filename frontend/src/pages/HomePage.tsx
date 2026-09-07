@@ -142,8 +142,9 @@ export default function HomePage() {
           <ul className="divide-y divide-gray-100 bg-white rounded-xl border border-gray-100">
             {notices?.items.map((a) => (
               <li key={a.id}>
-                <Link to={`/community/notice/${a.id}`} className="block px-4 py-3 text-sm text-gray-700 hover:bg-crimson-50">
-                  {a.title}
+                <Link to={`/community/notice/${a.id}`} className="flex items-center justify-between gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-crimson-50">
+                  <span className="truncate">{a.title}</span>
+                  <span className="text-xs text-gray-400 shrink-0">{a.authorName}</span>
                 </Link>
               </li>
             ))}
@@ -158,8 +159,9 @@ export default function HomePage() {
           <ul className="divide-y divide-gray-100 bg-white rounded-xl border border-gray-100">
             {stories?.items.map((a) => (
               <li key={a.id}>
-                <Link to={`/community/story/${a.id}`} className="block px-4 py-3 text-sm text-gray-700 hover:bg-crimson-50">
-                  {a.title}
+                <Link to={`/community/story/${a.id}`} className="flex items-center justify-between gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-crimson-50">
+                  <span className="truncate">{a.title}</span>
+                  <span className="text-xs text-gray-400 shrink-0">{a.authorName}</span>
                 </Link>
               </li>
             ))}
