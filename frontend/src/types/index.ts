@@ -42,6 +42,7 @@ export interface EventList {
   title: string
   eventDate: string
   location: string
+  googleMapsUrl?: string | null
   fee: number
   maxAttendees: number
   currentAttendees: number

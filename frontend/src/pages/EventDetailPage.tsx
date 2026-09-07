@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import YouTube from 'react-youtube'
 import { eventsApi, galleryApi } from '../api'
 import { useAuthStore } from '../store/authStore'
+import { getGoogleMapsLink } from '../utils/maps'
 import type { EventDetail, GalleryItem, PagedResult } from '../types'
 
 function extractYouTubeId(url: string) {
@@ -59,7 +60,19 @@ export default function EventDetailPage() {
         {event.description && <p className="text-sm text-gray-600 mb-3">{event.description}</p>}
         <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-500">
           <span>일시: {format(new Date(event.eventDate), 'yyyy년 M월 d일 (EEE) HH:mm')}</span>
-          <span>장소: {event.location}</span>
+          <span>
+            장소: {event.location}
+            {event.googleMapsUrl && (
+              <a
+                href={getGoogleMapsLink(event.googleMapsUrl)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-2 text-crimson hover:underline"
+              >
+                지도에서 보기 &gt;
+              </a>
+            )}
+          </span>
           <span>참가비: {event.fee > 0 ? `$${event.fee.toFixed(2)}` : '무료'}</span>
           <span>현재 신청: 총 {event.currentAttendees}명</span>
         </div>

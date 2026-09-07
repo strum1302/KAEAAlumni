@@ -60,6 +60,7 @@ public class AppDbContext : DbContext
             e.Property(ev => ev.Description).HasColumnName("description");
             e.Property(ev => ev.EventDate).HasColumnName("event_date");
             e.Property(ev => ev.Location).HasColumnName("location").HasMaxLength(255);
+            e.Property(ev => ev.GoogleMapsUrl).HasColumnName("google_maps_url");
             e.Property(ev => ev.Fee).HasColumnName("fee").HasColumnType("decimal(10,2)");
             e.Property(ev => ev.MaxAttendees).HasColumnName("max_attendees");
             e.Property(ev => ev.IsActive).HasColumnName("is_active");

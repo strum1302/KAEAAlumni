@@ -30,7 +30,7 @@ public class EventsController : ControllerBase
         var (events, total) = await _eventRepo.GetPagedAsync(upcomingOnly, page, pageSize);
         var items = events.Select(e => new EventListDto(
             e.Id, e.Title, e.EventDate, e.Location, e.Fee, e.MaxAttendees,
-            e.Rsvps?.Sum(r => 1 + r.AdditionalGuests) ?? 0, e.IsActive
+            e.Rsvps?.Sum(r => 1 + r.AdditionalGuests) ?? 0, e.IsActive, e.GoogleMapsUrl
         )).ToList();
 
         return Ok(new PagedResultDto<EventListDto>(
@@ -48,7 +48,8 @@ public class EventsController : ControllerBase
             ev.Id, ev.Title, ev.Description, ev.EventDate, ev.Location, ev.Fee,
             ev.MaxAttendees, ev.Rsvps?.Sum(r => 1 + r.AdditionalGuests) ?? 0, ev.IsActive,
             ev.GalleryItems?.Count(g => g.MediaType == Domain.Enums.MediaType.PHOTO) ?? 0,
-            ev.GalleryItems?.Count(g => g.MediaType == Domain.Enums.MediaType.VIDEO) ?? 0
+            ev.GalleryItems?.Count(g => g.MediaType == Domain.Enums.MediaType.VIDEO) ?? 0,
+            ev.GoogleMapsUrl
         );
         return Ok(dto);
     }
@@ -64,6 +65,7 @@ public class EventsController : ControllerBase
             Description = dto.Description,
             EventDate = dto.EventDate,
             Location = dto.Location,
+            GoogleMapsUrl = dto.GoogleMapsUrl,
             Fee = dto.Fee,
             MaxAttendees = dto.MaxAttendees
         };
@@ -84,6 +86,7 @@ public class EventsController : ControllerBase
         ev.Description = dto.Description;
         ev.EventDate = dto.EventDate;
         ev.Location = dto.Location;
+        ev.GoogleMapsUrl = dto.GoogleMapsUrl;
         ev.Fee = dto.Fee;
         ev.MaxAttendees = dto.MaxAttendees;
         ev.IsActive = dto.IsActive;

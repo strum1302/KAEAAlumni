@@ -156,6 +156,10 @@ ALTER TABLE members ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT 
 -- (리사이즈 후) base64 data URL 형태로 그대로 저장합니다. NULL이면 사진 없음.
 ALTER TABLE members ADD COLUMN IF NOT EXISTS photo_url TEXT;
 
+-- 행사 장소의 구글맵 주소(또는 구글맵 링크). 관리자가 주소나 구글맵 URL을 직접 입력하면
+-- 프론트엔드에서 "지도에서 보기" 링크로 표시됩니다. NULL이면 지도 링크 없음(장소명만 표시).
+ALTER TABLE events ADD COLUMN IF NOT EXISTS google_maps_url TEXT;
+
 -- ------------------------------------------------------------------------------
 -- 7. 테스트용 시드 데이터 (Seed Data)
 -- ------------------------------------------------------------------------------

@@ -18,7 +18,8 @@ public record EventListDto(
     decimal Fee,
     int MaxAttendees,
     int CurrentAttendees,
-    bool IsActive
+    bool IsActive,
+    string? GoogleMapsUrl = null
 );
 
 public record EventDetailDto(
@@ -32,7 +33,8 @@ public record EventDetailDto(
     int CurrentAttendees,
     bool IsActive,
     int PhotoCount,
-    int VideoCount
+    int VideoCount,
+    string? GoogleMapsUrl = null
 );
 
 public record CreateEventDto(
@@ -41,7 +43,8 @@ public record CreateEventDto(
     DateTime EventDate,
     string Location,
     decimal Fee,
-    int MaxAttendees
+    int MaxAttendees,
+    string? GoogleMapsUrl = null   // 주소 또는 구글맵 링크 (선택)
 );
 
 public record UpdateEventDto(
@@ -51,7 +54,8 @@ public record UpdateEventDto(
     string Location,
     decimal Fee,
     int MaxAttendees,
-    bool IsActive
+    bool IsActive,
+    string? GoogleMapsUrl = null
 );
 
 // ── EventRsvp ───────────────────────────────────────────

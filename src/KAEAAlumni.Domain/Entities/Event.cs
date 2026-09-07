@@ -9,6 +9,7 @@ public class Event : BaseEntity
     public string? Description { get; set; }
     public DateTime EventDate { get; set; }
     public string Location { get; set; } = string.Empty;
+    public string? GoogleMapsUrl { get; set; }
     public decimal Fee { get; set; } = 0;
     public int MaxAttendees { get; set; } = 0;   // 0 = 무제한
     public bool IsActive { get; set; } = true;
