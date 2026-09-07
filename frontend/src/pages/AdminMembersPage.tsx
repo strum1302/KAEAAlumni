@@ -1,9 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { membersApi } from '../api'
 import { useAuthStore } from '../store/authStore'
+import { useSort } from '../hooks/useSort'
+import Pagination from '../components/common/Pagination'
+import SortableTh from '../components/common/SortableTh'
 import type { MemberRole } from '../types'
+
+const PAGE_SIZE = 20
 
 interface MemberRow {
   id: string
@@ -42,6 +47,7 @@ export default function AdminMembersPage() {
   const [savingOfficerId, setSavingOfficerId] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [includeInactive, setIncludeInactive] = useState(false)
+  const [page, setPage] = useState(1)
 
   const { data: members, isLoading } = useQuery({
     queryKey: ['members', 'all', includeInactive],
@@ -53,6 +59,13 @@ export default function AdminMembersPage() {
     if (!q) return true
     return m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q)
   })
+
+  const { sorted, sortKey, direction, toggleSort } = useSort(filtered, 'name')
+
+  useEffect(() => setPage(1), [search, includeInactive])
+
+  const totalPages = Math.max(1, Math.ceil((sorted?.length ?? 0) / PAGE_SIZE))
+  const paged = (sorted ?? []).slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const handleRoleChange = async (targetMember: MemberRow, newRole: MemberRole) => {
     if (newRole === targetMember.role) return
@@ -166,11 +179,11 @@ export default function AdminMembersPage() {
         <table className="w-full text-sm min-w-[820px]">
           <thead className="bg-gray-50 text-gray-500">
             <tr>
-              <th className="text-left px-4 py-2">성명</th>
-              <th className="text-left px-4 py-2">이메일</th>
-              <th className="text-left px-4 py-2">학번/과</th>
+              <SortableTh label="성명" active={sortKey === 'name'} direction={direction} onClick={() => toggleSort('name')} />
+              <SortableTh label="이메일" active={sortKey === 'email'} direction={direction} onClick={() => toggleSort('email')} />
+              <SortableTh label="학번/과" active={sortKey === 'entryYear'} direction={direction} onClick={() => toggleSort('entryYear')} />
               <th className="text-left px-4 py-2">지역</th>
-              <th className="text-left px-4 py-2">현재 권한</th>
+              <SortableTh label="현재 권한" active={sortKey === 'role'} direction={direction} onClick={() => toggleSort('role')} />
               <th className="text-left px-4 py-2">권한 변경</th>
               <th className="text-left px-4 py-2">임원 직책</th>
               <th className="text-left px-4 py-2"></th>
@@ -180,7 +193,7 @@ export default function AdminMembersPage() {
             {isLoading && (
               <tr><td colSpan={8} className="px-4 py-6 text-center text-gray-400">불러오는 중...</td></tr>
             )}
-            {!isLoading && filtered.map((m) => (
+            {!isLoading && paged.map((m) => (
               <tr key={m.id} className={m.isActive ? '' : 'bg-gray-50 text-gray-400'}>
                 <td className="px-4 py-2 whitespace-nowrap">
                   {m.name}
@@ -248,6 +261,8 @@ export default function AdminMembersPage() {
           </tbody>
         </table>
       </div>
+
+      <Pagination page={page} totalPages={totalPages} onChange={setPage} />
     </div>
   )
 }

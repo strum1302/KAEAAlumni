@@ -4,10 +4,14 @@ import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import { paymentsApi, membersApi } from '../api'
 import { useAuthStore } from '../store/authStore'
+import { useSort } from '../hooks/useSort'
+import Pagination from '../components/common/Pagination'
+import SortableTh from '../components/common/SortableTh'
 import type { Payment, PaymentSummary, PagedResult } from '../types'
 
 const currentYear = new Date().getFullYear()
 const YEARS = [currentYear + 1, currentYear, currentYear - 1, currentYear - 2]
+const PAGE_SIZE = 20
 
 export default function AdminPaymentsPage() {
   const { member } = useAuthStore()
@@ -16,6 +20,9 @@ export default function AdminPaymentsPage() {
   const [year, setYear] = useState(currentYear)
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'MEMBERSHIP_FEE' | 'DONATION' | 'EVENT_FEE'>('ALL')
   const [showAdd, setShowAdd] = useState(false)
+  const [page, setPage] = useState(1)
+
+  useEffect(() => setPage(1), [year, typeFilter])
 
   const { data: summary } = useQuery({
     queryKey: ['payments', 'summary', year],
@@ -23,11 +30,13 @@ export default function AdminPaymentsPage() {
   })
 
   const { data: payments, refetch } = useQuery({
-    queryKey: ['payments', 'list', year, typeFilter],
+    queryKey: ['payments', 'list', year, typeFilter, page],
     queryFn: async () => (await paymentsApi.getList({
-      year, type: typeFilter === 'ALL' ? undefined : typeFilter, pageSize: 100,
+      year, type: typeFilter === 'ALL' ? undefined : typeFilter, page, pageSize: PAGE_SIZE,
     })).data as PagedResult<Payment>,
   })
+
+  const { sorted, sortKey, direction, toggleSort } = useSort(payments?.items, 'paymentDate', 'desc')
 
   const methodLabel = (m: string) => ({ ZELLE: 'ZELLE', VENMO: 'VENMO', CHECK: 'CHECK', CREDIT_CARD: 'CREDIT CARD', CASH: 'CASH' }[m] || m)
   const typeLabel = (t: string) => ({ MEMBERSHIP_FEE: '연회비', DONATION: '도네이션', EVENT_FEE: '행사비' }[t] || t)
@@ -74,17 +83,17 @@ export default function AdminPaymentsPage() {
         <table className="w-full text-sm min-w-[720px]">
           <thead className="bg-gray-50 text-gray-500">
             <tr>
-              <th className="text-left px-4 py-2">납부일자</th>
-              <th className="text-left px-4 py-2">교우 성명 (학번/과)</th>
-              <th className="text-left px-4 py-2">구분</th>
-              <th className="text-left px-4 py-2">금액</th>
+              <SortableTh label="납부일자" active={sortKey === 'paymentDate'} direction={direction} onClick={() => toggleSort('paymentDate')} />
+              <SortableTh label="교우 성명 (학번/과)" active={sortKey === 'memberName'} direction={direction} onClick={() => toggleSort('memberName')} />
+              <SortableTh label="구분" active={sortKey === 'paymentType'} direction={direction} onClick={() => toggleSort('paymentType')} />
+              <SortableTh label="금액" active={sortKey === 'amount'} direction={direction} onClick={() => toggleSort('amount')} />
               <th className="text-left px-4 py-2">납부수단/Ref#</th>
               <th className="text-left px-4 py-2">세부목적/메모</th>
-              <th className="text-left px-4 py-2">영수증</th>
+              <SortableTh label="영수증" active={sortKey === 'receiptIssued'} direction={direction} onClick={() => toggleSort('receiptIssued')} />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {payments?.items.map((p) => (
+            {sorted?.map((p) => (
               <tr key={p.id}>
                 <td className="px-4 py-2 whitespace-nowrap">{format(new Date(p.paymentDate), 'yyyy-MM-dd')}</td>
                 <td className="px-4 py-2">{p.memberName} ({p.graduationInfo})</td>
@@ -105,6 +114,8 @@ export default function AdminPaymentsPage() {
           </tbody>
         </table>
       </div>
+
+      <Pagination page={page} totalPages={payments?.totalPages ?? 1} onChange={setPage} />
 
       {showAdd && (
         <AddPaymentModal onClose={() => setShowAdd(false)} onCreated={() => {

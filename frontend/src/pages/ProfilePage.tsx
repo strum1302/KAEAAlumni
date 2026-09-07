@@ -4,13 +4,18 @@ import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import { membersApi, paymentsApi } from '../api'
 import { useAuthStore } from '../store/authStore'
+import { useSort } from '../hooks/useSort'
+import Pagination from '../components/common/Pagination'
+import SortableTh from '../components/common/SortableTh'
 
 const US_STATES = ['IL', 'IN', 'WI', 'MI', 'OH', 'MN', 'IA', 'MO', 'KY']
+const PAGE_SIZE = 10
 
 export default function ProfilePage() {
   const { member, setMember } = useAuthStore()
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [paymentsPage, setPaymentsPage] = useState(1)
   const [form, setForm] = useState({
     cellPhone: member?.cellPhone || '',
     homePhone: member?.homePhone || '',
@@ -29,6 +34,11 @@ export default function ProfilePage() {
       amount: number; paymentMethod: string; receiptIssued: boolean
     }>,
   })
+
+  const { sorted: sortedPayments, sortKey: paymentSortKey, direction: paymentDirection, toggleSort: togglePaymentSort } =
+    useSort(payments, 'paymentDate', 'desc')
+  const paymentsTotalPages = Math.max(1, Math.ceil((sortedPayments?.length ?? 0) / PAGE_SIZE))
+  const pagedPayments = (sortedPayments ?? []).slice((paymentsPage - 1) * PAGE_SIZE, paymentsPage * PAGE_SIZE)
 
   if (!member) return null
 
@@ -198,14 +208,14 @@ export default function ProfilePage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-500">
               <tr>
-                <th className="text-left px-4 py-2">납부일</th>
-                <th className="text-left px-4 py-2">구분</th>
-                <th className="text-left px-4 py-2">금액</th>
-                <th className="text-left px-4 py-2">영수증</th>
+                <SortableTh label="납부일" active={paymentSortKey === 'paymentDate'} direction={paymentDirection} onClick={() => togglePaymentSort('paymentDate')} />
+                <SortableTh label="구분" active={paymentSortKey === 'paymentType'} direction={paymentDirection} onClick={() => togglePaymentSort('paymentType')} />
+                <SortableTh label="금액" active={paymentSortKey === 'amount'} direction={paymentDirection} onClick={() => togglePaymentSort('amount')} />
+                <SortableTh label="영수증" active={paymentSortKey === 'receiptIssued'} direction={paymentDirection} onClick={() => togglePaymentSort('receiptIssued')} />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {payments?.map((p) => (
+              {pagedPayments.map((p) => (
                 <tr key={p.id}>
                   <td className="px-4 py-2">{format(new Date(p.paymentDate), 'yyyy.MM.dd')}</td>
                   <td className="px-4 py-2">{p.paymentType === 'MEMBERSHIP_FEE' ? '연회비' : p.paymentType === 'DONATION' ? '도네이션' : '행사비'}</td>
@@ -219,6 +229,7 @@ export default function ProfilePage() {
             </tbody>
           </table>
         </div>
+        <Pagination page={paymentsPage} totalPages={paymentsTotalPages} onChange={setPaymentsPage} />
       </section>
     </div>
   )

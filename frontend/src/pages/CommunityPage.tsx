@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import { articlesApi } from '../api'
 import { useAuthStore } from '../store/authStore'
+import Pagination from '../components/common/Pagination'
 import type { ArticleCategory, ArticleList, PagedResult } from '../types'
 
 const TABS: { key: ArticleCategory; label: string }[] = [
@@ -13,20 +14,25 @@ const TABS: { key: ArticleCategory; label: string }[] = [
   { key: 'FELLOWSHIP', label: '미중서부 장학기금' },
 ]
 
+const PAGE_SIZE = 15
+
 export default function CommunityPage() {
   const { category = 'notice' } = useParams<{ category: string }>()
   const navigate = useNavigate()
   const { isAuthenticated, member } = useAuthStore()
   const [showWrite, setShowWrite] = useState(false)
   const [form, setForm] = useState({ title: '', content: '' })
+  const [page, setPage] = useState(1)
   const activeCategory = category.toUpperCase() as ArticleCategory
 
   const canWriteNotice = member?.role === 'OFFICER' || member?.role === 'ADMIN'
   const canWrite = activeCategory === 'STORY' ? isAuthenticated : canWriteNotice
 
+  useEffect(() => setPage(1), [activeCategory])
+
   const { data, refetch } = useQuery({
-    queryKey: ['articles', activeCategory],
-    queryFn: async () => (await articlesApi.getList({ category: activeCategory, pageSize: 30 })).data as PagedResult<ArticleList>,
+    queryKey: ['articles', activeCategory, page],
+    queryFn: async () => (await articlesApi.getList({ category: activeCategory, page, pageSize: PAGE_SIZE })).data as PagedResult<ArticleList>,
   })
 
   const submit = async (e: React.FormEvent) => {
@@ -94,6 +100,8 @@ export default function CommunityPage() {
         ))}
         {!data?.items.length && <li className="px-4 py-6 text-sm text-gray-400 text-center">등록된 글이 없습니다.</li>}
       </ul>
+
+      <Pagination page={page} totalPages={data?.totalPages ?? 1} onChange={setPage} />
     </div>
   )
 }

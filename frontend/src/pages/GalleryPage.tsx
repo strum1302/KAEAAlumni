@@ -1,17 +1,23 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { galleryApi } from '../api'
+import Pagination from '../components/common/Pagination'
 import type { GalleryItem, PagedResult } from '../types'
+
+const PAGE_SIZE = 16
 
 export default function GalleryPage() {
   const [filter, setFilter] = useState<'ALL' | 'PHOTO' | 'VIDEO'>('ALL')
   const [selected, setSelected] = useState<GalleryItem | null>(null)
+  const [page, setPage] = useState(1)
+
+  useEffect(() => setPage(1), [filter])
 
   const { data } = useQuery({
-    queryKey: ['gallery', 'all', filter],
+    queryKey: ['gallery', 'all', filter, page],
     queryFn: async () => (await galleryApi.getList({
-      mediaType: filter === 'ALL' ? undefined : filter, pageSize: 48,
+      mediaType: filter === 'ALL' ? undefined : filter, page, pageSize: PAGE_SIZE,
     })).data as PagedResult<GalleryItem>,
   })
 
@@ -50,6 +56,8 @@ export default function GalleryPage() {
         ))}
         {!data?.items.length && <p className="text-sm text-gray-400 col-span-4">등록된 미디어가 없습니다.</p>}
       </div>
+
+      <Pagination page={page} totalPages={data?.totalPages ?? 1} onChange={setPage} />
 
       {selected && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4" onClick={() => setSelected(null)}>

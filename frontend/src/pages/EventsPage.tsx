@@ -1,13 +1,19 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { format } from 'date-fns'
 import { eventsApi } from '../api'
+import Pagination from '../components/common/Pagination'
 import type { EventList, PagedResult } from '../types'
 
+const PAGE_SIZE = 12
+
 export default function EventsPage() {
+  const [page, setPage] = useState(1)
+
   const { data } = useQuery({
-    queryKey: ['events', 'all'],
-    queryFn: async () => (await eventsApi.getList({ pageSize: 50 })).data as PagedResult<EventList>,
+    queryKey: ['events', 'all', page],
+    queryFn: async () => (await eventsApi.getList({ page, pageSize: PAGE_SIZE })).data as PagedResult<EventList>,
   })
 
   return (
@@ -37,6 +43,8 @@ export default function EventsPage() {
         ))}
         {!data?.items.length && <p className="text-sm text-gray-400">등록된 행사가 없습니다.</p>}
       </div>
+
+      <Pagination page={page} totalPages={data?.totalPages ?? 1} onChange={setPage} />
     </div>
   )
 }
