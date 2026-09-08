@@ -18,7 +18,7 @@ export default function GivingPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div className="bg-crimson-50 rounded-lg p-4">
             <p className="font-semibold text-crimson mb-1">Zelle</p>
-            <p className="text-gray-600">payment@kuchicago.org</p>
+            <p className="text-gray-600">Zelle Tag: <span className="font-medium">kuaa1905</span></p>
           </div>
           <div className="bg-crimson-50 rounded-lg p-4">
             <p className="font-semibold text-crimson mb-1">Check (수표)</p>

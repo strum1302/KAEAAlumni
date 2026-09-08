@@ -197,7 +197,7 @@ export default function Layout() {
             <div>
               <h4 className="text-white font-bold mb-3">연락처</h4>
               <p className="text-sm">Email: info@kuchicago.org</p>
-              <p className="text-sm mt-1">Zelle: payment@kuchicago.org</p>
+              <p className="text-sm mt-1">Zelle Tag: kuaa1905</p>
               <p className="text-sm mt-1">Chicago &amp; Midwest, USA</p>
             </div>
           </div>
