@@ -65,9 +65,10 @@ export default function CommunityPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
+      // 작성자 이름 옆에 (입학연도 학과)를 함께 표기해, 목록/상세 어디서나 누가 쓴 글인지 바로 알 수 있게 합니다.
+      const authorName = member ? `${member.name} (${member.entryYear} ${member.major})` : '익명'
       await articlesApi.create({
-        category: activeCategory, title: form.title, content: form.content,
-        authorName: member?.name || '익명',
+        category: activeCategory, title: form.title, content: form.content, authorName,
       })
       toast.success('등록되었습니다.')
       setShowWrite(false)
@@ -131,9 +132,11 @@ export default function CommunityPage() {
         {data?.items.map((a) => (
           <li key={a.id}>
             <Link to={`/community/${category}/${a.id}`}
-              className="flex items-center justify-between px-4 py-3 text-sm text-gray-700 hover:bg-crimson-50">
-              <span>{a.title}</span>
-              <span className="text-xs text-gray-400">{format(new Date(a.createdAt), 'yyyy.MM.dd')} · 조회 {a.viewCount}</span>
+              className="flex items-center justify-between gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-crimson-50">
+              <span className="truncate">{a.title}</span>
+              <span className="text-xs text-gray-400 shrink-0">
+                {a.authorName} · {format(new Date(a.createdAt), 'yyyy.MM.dd')} · 조회 {a.viewCount}
+              </span>
             </Link>
           </li>
         ))}
