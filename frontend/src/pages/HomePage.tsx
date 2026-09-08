@@ -114,9 +114,9 @@ export default function HomePage() {
 
       {selectedMedia && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4" onClick={() => setSelectedMedia(null)}>
-          <div className="max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="max-w-5xl w-full" onClick={(e) => e.stopPropagation()}>
             {selectedMedia.mediaType === 'PHOTO' ? (
-              <img src={selectedMedia.mediaUrl} alt={selectedMedia.title} className="w-full rounded-xl" />
+              <img src={selectedMedia.mediaUrl} alt={selectedMedia.title} className="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-xl mx-auto" />
             ) : (
               <iframe
                 className="w-full aspect-video rounded-xl"
