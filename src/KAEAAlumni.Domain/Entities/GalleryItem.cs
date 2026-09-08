@@ -19,4 +19,7 @@ public class GalleryItem : BaseEntity
     public string MediaUrl { get; set; } = string.Empty;   // 이미지 원본 URL 또는 YouTube 링크
     public string? ThumbnailUrl { get; set; }
     public int DisplayOrder { get; set; } = 0;
+
+    // 홈페이지 "최근 행사 미디어"/"고대 자료실" 목록 노출 여부. false여도 갤러리 전체 목록에는 계속 노출됨.
+    public bool ShowOnHome { get; set; } = true;
 }

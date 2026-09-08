@@ -24,6 +24,7 @@ public class GalleryController : ControllerBase
         [FromQuery] Guid? articleId,
         [FromQuery] bool? hasEvent,
         [FromQuery] int? year,
+        [FromQuery] bool? showOnHome,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 24)
     {
@@ -32,10 +33,10 @@ public class GalleryController : ControllerBase
             Enum.TryParse<MediaType>(mediaType, true, out var parsed))
             type = parsed;
 
-        var (items, total) = await _galleryRepo.GetPagedAsync(type, eventId, articleId, page, pageSize, hasEvent, year);
+        var (items, total) = await _galleryRepo.GetPagedAsync(type, eventId, articleId, page, pageSize, hasEvent, year, showOnHome);
         var dtos = items.Select(g => new GalleryItemDto(
             g.Id, g.Title, g.Description, g.MediaType.ToString(), g.MediaUrl,
-            g.ThumbnailUrl, g.DisplayOrder, g.EventId, g.Event?.Title, g.ArticleId, g.CreatedAt
+            g.ThumbnailUrl, g.DisplayOrder, g.ShowOnHome, g.EventId, g.Event?.Title, g.ArticleId, g.CreatedAt
         )).ToList();
 
         return Ok(new PagedResultDto<GalleryItemDto>(
@@ -64,7 +65,8 @@ public class GalleryController : ControllerBase
             ThumbnailUrl = dto.ThumbnailUrl,
             EventId = dto.EventId,
             ArticleId = dto.ArticleId,
-            DisplayOrder = dto.DisplayOrder
+            DisplayOrder = dto.DisplayOrder,
+            ShowOnHome = dto.ShowOnHome
         };
         await _galleryRepo.AddAsync(item);
         await _galleryRepo.SaveChangesAsync();
@@ -82,6 +84,19 @@ public class GalleryController : ControllerBase
         item.DisplayOrder = dto.DisplayOrder;
         await _galleryRepo.SaveChangesAsync();
         return Ok(new { message = "정렬 순서가 변경되었습니다." });
+    }
+
+    // 홈페이지 노출 여부 변경 (체크 해제 시 홈페이지 목록에서만 숨김, 갤러리 전체보기에는 계속 노출)
+    [Authorize(Roles = "OFFICER,ADMIN")]
+    [HttpPut("{id}/visibility")]
+    public async Task<IActionResult> UpdateVisibility(Guid id, [FromBody] UpdateGalleryItemVisibilityDto dto)
+    {
+        var item = await _galleryRepo.GetByIdAsync(id);
+        if (item == null) return NotFound();
+
+        item.ShowOnHome = dto.ShowOnHome;
+        await _galleryRepo.SaveChangesAsync();
+        return Ok(new { message = dto.ShowOnHome ? "홈페이지에 표시됩니다." : "홈페이지에서 숨김 처리되었습니다." });
     }
 
     [Authorize(Roles = "OFFICER,ADMIN")]

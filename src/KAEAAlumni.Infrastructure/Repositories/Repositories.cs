@@ -134,9 +134,17 @@ public class ArticleRepository : Repository<Article>, IArticleRepository
         var query = _db.Articles.AsQueryable();
 
         if (category.HasValue)
+        {
             query = query.Where(a => a.Category == category.Value);
-
-        query = query.OrderByDescending(a => a.CreatedAt);
+            query = query.OrderByDescending(a => a.CreatedAt);
+        }
+        else
+        {
+            // "전체" 탭: 공지사항(NOTICE)은 항상 최상단에 고정하고, 나머지는 최신순으로 정렬.
+            query = query
+                .OrderByDescending(a => a.Category == ArticleCategory.NOTICE)
+                .ThenByDescending(a => a.CreatedAt);
+        }
 
         var total = await query.CountAsync();
         var articles = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
@@ -155,7 +163,7 @@ public class GalleryItemRepository : Repository<GalleryItem>, IGalleryItemReposi
     public GalleryItemRepository(AppDbContext db) : base(db) { }
 
     public async Task<(List<GalleryItem> Items, int Total)> GetPagedAsync(
-        MediaType? mediaType, Guid? eventId, Guid? articleId, int page, int pageSize, bool? hasEvent = null, int? year = null)
+        MediaType? mediaType, Guid? eventId, Guid? articleId, int page, int pageSize, bool? hasEvent = null, int? year = null, bool? showOnHome = null)
     {
         var query = _db.GalleryItems.Include(g => g.Event).AsQueryable();
 
@@ -172,6 +180,9 @@ public class GalleryItemRepository : Repository<GalleryItem>, IGalleryItemReposi
         // 갤러리 메인 페이지의 연도 선택 드롭다운용 필터 (등록일 기준).
         if (year.HasValue)
             query = query.Where(g => g.CreatedAt.Year == year.Value);
+        // 홈페이지 노출 여부 필터 — 홈페이지 위젯에서만 showOnHome=true로 필터링해서 호출.
+        if (showOnHome.HasValue)
+            query = query.Where(g => g.ShowOnHome == showOnHome.Value);
 
         query = query.OrderBy(g => g.DisplayOrder).ThenByDescending(g => g.CreatedAt);
 

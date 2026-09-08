@@ -29,12 +29,12 @@ export default function HomePage() {
   // 고대 자료("고대 자료실")를 서로 섞이지 않도록 분리해서 보여줍니다.
   const { data: media } = useQuery({
     queryKey: ['gallery', 'home', 'events'],
-    queryFn: async () => (await galleryApi.getList({ hasEvent: true, pageSize: 4 })).data as PagedResult<GalleryItem>,
+    queryFn: async () => (await galleryApi.getList({ hasEvent: true, showOnHome: true, pageSize: 4 })).data as PagedResult<GalleryItem>,
   })
 
   const { data: archive } = useQuery({
     queryKey: ['gallery', 'home', 'archive'],
-    queryFn: async () => (await galleryApi.getList({ hasEvent: false, pageSize: 4 })).data as PagedResult<GalleryItem>,
+    queryFn: async () => (await galleryApi.getList({ hasEvent: false, showOnHome: true, pageSize: 4 })).data as PagedResult<GalleryItem>,
   })
 
   return (

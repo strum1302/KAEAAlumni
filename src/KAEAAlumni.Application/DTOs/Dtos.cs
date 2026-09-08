@@ -122,6 +122,7 @@ public record GalleryItemDto(
     string MediaUrl,
     string? ThumbnailUrl,
     int DisplayOrder,
+    bool ShowOnHome,
     Guid? EventId,
     string? EventTitle,
     Guid? ArticleId,
@@ -136,11 +137,16 @@ public record CreateGalleryItemDto(
     string? ThumbnailUrl,
     Guid? EventId,
     Guid? ArticleId,
-    int DisplayOrder = 0   // 낮을수록 먼저 표시 (예: 교가는 0)
+    int DisplayOrder = 0,   // 낮을수록 먼저 표시 (예: 교가는 0)
+    bool ShowOnHome = true  // false면 갤러리 전체 목록에만 노출되고 홈페이지 목록에서는 제외됨
 );
 
 public record UpdateGalleryItemOrderDto(
     int DisplayOrder
+);
+
+public record UpdateGalleryItemVisibilityDto(
+    bool ShowOnHome
 );
 
 // ── Payment ─────────────────────────────────────────────
@@ -187,4 +193,10 @@ public record PaymentSummaryDto(
     decimal MembershipFeeTotal,
     decimal DonationTotal,
     decimal EventFeeTotal
+);
+
+// ── 비밀번호 변경 (본인) ────────────────────────────────
+public record ChangePasswordDto(
+    string CurrentPassword,
+    string NewPassword
 );

@@ -9,17 +9,25 @@ import { fileToResizedDataUrl } from '../utils/image'
 import Pagination from '../components/common/Pagination'
 import type { ArticleCategory, ArticleList, PagedResult } from '../types'
 
-const TABS: { key: ArticleCategory; label: string }[] = [
+type TabKey = ArticleCategory | 'ALL'
+
+const TABS: { key: TabKey; label: string }[] = [
+  { key: 'ALL', label: '전체' },
   { key: 'NOTICE', label: '공지사항' },
   { key: 'STORY', label: '우리 이야기' },
   { key: 'FREE', label: '자유게시판' },
   { key: 'FELLOWSHIP', label: '미중서부 장학기금' },
 ]
 
+// "전체" 탭에서 각 글이 어느 게시판 글인지 보여주기 위한 카테고리 라벨.
+const CATEGORY_LABELS: Record<ArticleCategory, string> = {
+  NOTICE: '공지사항', STORY: '우리 이야기', FREE: '자유게시판', FELLOWSHIP: '미중서부 장학기금', HISTORY: '연혁',
+}
+
 const PAGE_SIZE = 15
 
 export default function CommunityPage() {
-  const { category = 'notice' } = useParams<{ category: string }>()
+  const { category = 'all' } = useParams<{ category: string }>()
   const navigate = useNavigate()
   const { isAuthenticated, member } = useAuthStore()
   const [showWrite, setShowWrite] = useState(false)
@@ -27,16 +35,20 @@ export default function CommunityPage() {
   const [page, setPage] = useState(1)
   const [insertingImage, setInsertingImage] = useState(false)
   const contentRef = useRef<HTMLTextAreaElement>(null)
-  const activeCategory = category.toUpperCase() as ArticleCategory
+  const activeCategory = category.toUpperCase() as TabKey
 
   const canWriteNotice = member?.role === 'OFFICER' || member?.role === 'ADMIN'
-  const canWrite = (activeCategory === 'STORY' || activeCategory === 'FREE') ? isAuthenticated : canWriteNotice
+  const canWrite = activeCategory === 'ALL'
+    ? false
+    : (activeCategory === 'STORY' || activeCategory === 'FREE') ? isAuthenticated : canWriteNotice
 
   useEffect(() => setPage(1), [activeCategory])
 
   const { data, refetch } = useQuery({
     queryKey: ['articles', activeCategory, page],
-    queryFn: async () => (await articlesApi.getList({ category: activeCategory, page, pageSize: PAGE_SIZE })).data as PagedResult<ArticleList>,
+    queryFn: async () => (await articlesApi.getList({
+      category: activeCategory === 'ALL' ? undefined : activeCategory, page, pageSize: PAGE_SIZE,
+    })).data as PagedResult<ArticleList>,
   })
 
   // 커서 위치에 사진을 삽입합니다. 본문 텍스트 안에 [[img:...]] 마커로 끼워 넣고,
@@ -64,6 +76,7 @@ export default function CommunityPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (activeCategory === 'ALL') return
     try {
       // 작성자 이름 옆에 (입학연도 학과)를 함께 표기해, 목록/상세 어디서나 누가 쓴 글인지 바로 알 수 있게 합니다.
       const authorName = member ? `${member.name} (${member.entryYear} ${member.major})` : '익명'
@@ -133,7 +146,14 @@ export default function CommunityPage() {
           <li key={a.id}>
             <Link to={`/community/${category}/${a.id}`}
               className="flex items-center justify-between gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-crimson-50">
-              <span className="truncate">{a.title}</span>
+              <span className="truncate flex items-center gap-2">
+                {activeCategory === 'ALL' && (
+                  <span className="text-[10px] font-semibold text-crimson bg-crimson-50 rounded px-1.5 py-0.5 shrink-0">
+                    {CATEGORY_LABELS[a.category]}
+                  </span>
+                )}
+                <span className="truncate">{a.title}</span>
+              </span>
               <span className="text-xs text-gray-400 shrink-0">
                 {a.authorName} · {format(new Date(a.createdAt), 'yyyy.MM.dd')} · 조회 {a.viewCount}
               </span>

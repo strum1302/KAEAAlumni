@@ -52,7 +52,7 @@ public class ArticlesController : ControllerBase
             article.AuthorName, article.ViewCount, article.CreatedAt,
             article.GalleryItems.Select(g => new GalleryItemDto(
                 g.Id, g.Title, g.Description, g.MediaType.ToString(), g.MediaUrl,
-                g.ThumbnailUrl, g.DisplayOrder, g.EventId, null, g.ArticleId, g.CreatedAt
+                g.ThumbnailUrl, g.DisplayOrder, g.ShowOnHome, g.EventId, null, g.ArticleId, g.CreatedAt
             )).ToList()
         );
         return Ok(dto);

@@ -123,6 +123,7 @@ public class AppDbContext : DbContext
             e.Property(g => g.MediaUrl).HasColumnName("media_url");
             e.Property(g => g.ThumbnailUrl).HasColumnName("thumbnail_url");
             e.Property(g => g.DisplayOrder).HasColumnName("display_order");
+            e.Property(g => g.ShowOnHome).HasColumnName("show_on_home");
             e.Property(g => g.CreatedAt).HasColumnName("created_at");
         });
 

@@ -59,6 +59,8 @@ export const membersApi = {
     api.put(`/members/${id}/officer-title`, { officerTitle }),
   setActive: (id: string, isActive: boolean) => api.put(`/members/${id}/active`, { isActive }),
   updatePhoto: (id: string, photoUrl: string | null) => api.put(`/members/${id}/photo`, { photoUrl }),
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    api.put('/members/me/password', data),
 }
 
 // ── Events API ────────────────────────────────────
@@ -93,14 +95,15 @@ export const articlesApi = {
 export const galleryApi = {
   getList: (params?: {
     mediaType?: string; eventId?: string; articleId?: string; hasEvent?: boolean; year?: number
-    page?: number; pageSize?: number
+    showOnHome?: boolean; page?: number; pageSize?: number
   }) => api.get('/gallery', { params }),
   getYears: () => api.get('/gallery/years'),
   create: (data: {
     title: string; description?: string; mediaType: string; mediaUrl: string
-    thumbnailUrl?: string; eventId?: string; articleId?: string; displayOrder?: number
+    thumbnailUrl?: string; eventId?: string; articleId?: string; displayOrder?: number; showOnHome?: boolean
   }) => api.post('/gallery', data),
   updateOrder: (id: string, displayOrder: number) => api.put(`/gallery/${id}/order`, { displayOrder }),
+  updateVisibility: (id: string, showOnHome: boolean) => api.put(`/gallery/${id}/visibility`, { showOnHome }),
   delete: (id: string) => api.delete(`/gallery/${id}`),
 }
 

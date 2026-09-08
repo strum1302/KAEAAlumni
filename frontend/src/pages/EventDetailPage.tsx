@@ -21,9 +21,12 @@ export default function EventDetailPage() {
   const queryClient = useQueryClient()
   const [tab, setTab] = useState<'PHOTO' | 'VIDEO'>('PHOTO')
   const [showAddMedia, setShowAddMedia] = useState(false)
+  const [showRsvp, setShowRsvp] = useState(false)
+  const [selectedPhoto, setSelectedPhoto] = useState<GalleryItem | null>(null)
   const [rsvp, setRsvp] = useState({
     guestName: member?.name || '', email: member?.email || '', cellPhone: member?.cellPhone || '',
-    graduationInfo: '', additionalGuests: '0', note: '',
+    // 로그인한 회원은 학번/과를 프로필에서 자동으로 채워줍니다 (비로그인 게스트는 직접 입력).
+    graduationInfo: member ? `${member.entryYear} ${member.major}` : '', additionalGuests: '0', note: '',
   })
 
   const canManage = member?.role === 'OFFICER' || member?.role === 'ADMIN'
@@ -45,6 +48,7 @@ export default function EventDetailPage() {
     try {
       await eventsApi.createRsvp(id!, { ...rsvp, additionalGuests: Number(rsvp.additionalGuests) })
       toast.success('참가 신청이 완료되었습니다.')
+      setShowRsvp(false)
       queryClient.invalidateQueries({ queryKey: ['event', id] })
     } catch (err: any) {
       toast.error(err?.response?.data?.message || '참가 신청에 실패했습니다.')
@@ -79,34 +83,46 @@ export default function EventDetailPage() {
         </div>
       </div>
 
-      {/* RSVP 폼 */}
-      <div className="bg-white border border-gray-100 rounded-2xl p-6">
-        <h2 className="font-bold text-crimson mb-4">온라인 참가 신청 (RSVP)</h2>
-        <form onSubmit={submitRsvp} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input required placeholder="성명" value={rsvp.guestName}
-            onChange={(e) => setRsvp({ ...rsvp, guestName: e.target.value })}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-          <input required type="email" placeholder="이메일" value={rsvp.email}
-            onChange={(e) => setRsvp({ ...rsvp, email: e.target.value })}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-          <input required placeholder="휴대전화" value={rsvp.cellPhone}
-            onChange={(e) => setRsvp({ ...rsvp, cellPhone: e.target.value })}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-          <input required placeholder="학번/과 (예: 83 전산학과)" value={rsvp.graduationInfo}
-            onChange={(e) => setRsvp({ ...rsvp, graduationInfo: e.target.value })}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-          <input type="number" min={0} placeholder="동반인원" value={rsvp.additionalGuests}
-            onChange={(e) => setRsvp({ ...rsvp, additionalGuests: e.target.value })}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-          <input placeholder="메모 (선택)" value={rsvp.note}
-            onChange={(e) => setRsvp({ ...rsvp, note: e.target.value })}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-          <button type="submit"
-            className="md:col-span-2 bg-crimson text-white font-medium py-2.5 rounded-lg hover:bg-crimson-800 transition-colors">
-            참가 신청서 제출
-          </button>
-        </form>
-      </div>
+      {/* 온라인 참가신청 버튼 / RSVP 폼 - 버튼을 눌러야 신청서가 열립니다 */}
+      {!showRsvp ? (
+        <button onClick={() => setShowRsvp(true)}
+          className="bg-crimson text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-crimson-800 transition-colors">
+          온라인 참가신청
+        </button>
+      ) : (
+        <div className="bg-white border border-gray-100 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-bold text-crimson">온라인 참가 신청 (RSVP)</h2>
+            <button type="button" onClick={() => setShowRsvp(false)} className="text-sm text-gray-400 hover:text-gray-600">
+              닫기
+            </button>
+          </div>
+          <form onSubmit={submitRsvp} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input required placeholder="성명" value={rsvp.guestName}
+              onChange={(e) => setRsvp({ ...rsvp, guestName: e.target.value })}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            <input required type="email" placeholder="이메일" value={rsvp.email}
+              onChange={(e) => setRsvp({ ...rsvp, email: e.target.value })}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            <input required placeholder="휴대전화" value={rsvp.cellPhone}
+              onChange={(e) => setRsvp({ ...rsvp, cellPhone: e.target.value })}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            <input required placeholder="학번/과 (예: 83 전산학과)" value={rsvp.graduationInfo}
+              onChange={(e) => setRsvp({ ...rsvp, graduationInfo: e.target.value })}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            <input type="number" min={0} placeholder="동반인원" value={rsvp.additionalGuests}
+              onChange={(e) => setRsvp({ ...rsvp, additionalGuests: e.target.value })}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            <input placeholder="메모 (선택)" value={rsvp.note}
+              onChange={(e) => setRsvp({ ...rsvp, note: e.target.value })}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            <button type="submit"
+              className="md:col-span-2 bg-crimson text-white font-medium py-2.5 rounded-lg hover:bg-crimson-800 transition-colors">
+              참가 신청서 제출
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* 하부 미디어 갤러리 */}
       <div>
@@ -127,7 +143,9 @@ export default function EventDetailPage() {
           {gallery?.items.map((item) => (
             <div key={item.id} className="rounded-xl overflow-hidden bg-gray-100">
               {item.mediaType === 'PHOTO' ? (
-                <img src={item.mediaUrl} alt={item.title} className="w-full aspect-video object-cover" />
+                <button type="button" onClick={() => setSelectedPhoto(item)} className="block w-full">
+                  <img src={item.mediaUrl} alt={item.title} className="w-full aspect-video object-cover hover:opacity-90 transition-opacity" />
+                </button>
               ) : (
                 <YouTube videoId={extractYouTubeId(item.mediaUrl)} opts={{ width: '100%' }} className="w-full aspect-video" />
               )}
@@ -137,6 +155,20 @@ export default function EventDetailPage() {
           {!gallery?.items.length && <p className="text-sm text-gray-400 col-span-3">등록된 미디어가 없습니다.</p>}
         </div>
       </div>
+
+      {/* 사진 확대 라이트박스 */}
+      {selectedPhoto && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4" onClick={() => setSelectedPhoto(null)}>
+          <div className="max-w-5xl w-full" onClick={(e) => e.stopPropagation()}>
+            <img src={selectedPhoto.mediaUrl} alt={selectedPhoto.title}
+              className="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-xl mx-auto" />
+            <p className="text-white text-center mt-3">{selectedPhoto.title}</p>
+            {selectedPhoto.description && (
+              <p className="text-gray-300 text-sm text-center mt-1">{selectedPhoto.description}</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {showAddMedia && (
         <AddMediaModal eventId={id!} onClose={() => setShowAddMedia(false)} onCreated={() => {

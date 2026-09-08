@@ -177,6 +177,7 @@ function GalleryItemAdminControls({
   const queryClient = useQueryClient()
   const [order, setOrder] = useState(item.displayOrder)
   const [saving, setSaving] = useState(false)
+  const [togglingVisibility, setTogglingVisibility] = useState(false)
 
   const saveOrder = async () => {
     setSaving(true)
@@ -191,8 +192,20 @@ function GalleryItemAdminControls({
     }
   }
 
+  const toggleVisibility = async () => {
+    setTogglingVisibility(true)
+    try {
+      await galleryApi.updateVisibility(item.id, !item.showOnHome)
+      queryClient.invalidateQueries({ queryKey: ['gallery'] })
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || '변경에 실패했습니다.')
+    } finally {
+      setTogglingVisibility(false)
+    }
+  }
+
   return (
-    <div className="flex items-center gap-1 mt-1.5">
+    <div className="flex items-center gap-1 mt-1.5 flex-wrap">
       <input
         type="number"
         value={order}
@@ -207,6 +220,16 @@ function GalleryItemAdminControls({
       >
         {saving ? '저장 중...' : '순서저장'}
       </button>
+      <label className="flex items-center gap-1 text-xs text-gray-500 cursor-pointer" title="체크 해제 시 홈페이지 목록에서 숨겨집니다 (갤러리에는 계속 노출)">
+        <input
+          type="checkbox"
+          checked={item.showOnHome}
+          disabled={togglingVisibility}
+          onChange={toggleVisibility}
+          className="rounded"
+        />
+        홈 노출
+      </label>
       <button
         onClick={onDelete}
         disabled={deleting}
@@ -222,7 +245,7 @@ function AddGalleryModal({ onClose, onCreated }: { onClose: () => void; onCreate
   const [events, setEvents] = useState<EventList[]>([])
   const [form, setForm] = useState({
     title: '', description: '', mediaType: 'VIDEO' as 'PHOTO' | 'VIDEO',
-    mediaUrl: '', thumbnailUrl: '', eventId: '', displayOrder: 0,
+    mediaUrl: '', thumbnailUrl: '', eventId: '', displayOrder: 0, showOnHome: true,
   })
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -261,6 +284,7 @@ function AddGalleryModal({ onClose, onCreated }: { onClose: () => void; onCreate
         thumbnailUrl: form.thumbnailUrl || undefined,
         eventId: form.eventId || undefined,
         displayOrder: form.displayOrder,
+        showOnHome: form.showOnHome,
       })
       toast.success('등록되었습니다.')
       onCreated()
@@ -357,6 +381,15 @@ function AddGalleryModal({ onClose, onCreated }: { onClose: () => void; onCreate
               className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm"
             />
           </div>
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            <input
+              type="checkbox"
+              checked={form.showOnHome}
+              onChange={(e) => setForm({ ...form, showOnHome: e.target.checked })}
+              className="rounded"
+            />
+            홈페이지에 표시 (체크 해제 시 갤러리 전체보기에만 노출됩니다)
+          </label>
           <div className="flex gap-2 pt-2">
             <button type="button" onClick={onClose} className="flex-1 border border-gray-300 rounded-lg py-2 text-sm">취소</button>
             <button type="submit" disabled={saving || uploading}

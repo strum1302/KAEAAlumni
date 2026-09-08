@@ -55,6 +55,26 @@ public class MembersController : ControllerBase
         return NoContent();
     }
 
+    // 내 비밀번호 변경 - 현재 비밀번호 확인 후 새 비밀번호로 교체
+    [Authorize]
+    [HttpPut("me/password")]
+    public async Task<IActionResult> ChangeMyPassword([FromBody] ChangePasswordDto dto)
+    {
+        var id = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var member = await _memberRepo.GetByIdAsync(id);
+        if (member == null) return NotFound();
+
+        if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, member.PasswordHash))
+            return BadRequest(new { message = "현재 비밀번호가 올바르지 않습니다." });
+
+        if (string.IsNullOrWhiteSpace(dto.NewPassword) || dto.NewPassword.Length < 8)
+            return BadRequest(new { message = "새 비밀번호는 8자 이상이어야 합니다." });
+
+        member.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+        await _memberRepo.SaveChangesAsync();
+        return Ok(new { message = "비밀번호가 변경되었습니다." });
+    }
+
     // 전체 회원 목록 (Officer/Admin) - includeInactive=true 시 등록 취소된 회원도 함께 조회
     [Authorize(Roles = "OFFICER,ADMIN")]
     [HttpGet]

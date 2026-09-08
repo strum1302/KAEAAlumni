@@ -161,6 +161,11 @@ ALTER TABLE members ADD COLUMN IF NOT EXISTS photo_url TEXT;
 -- 프론트엔드에서 "지도에서 보기" 링크로 표시됩니다. NULL이면 지도 링크 없음(장소명만 표시).
 ALTER TABLE events ADD COLUMN IF NOT EXISTS google_maps_url TEXT;
 
+-- 갤러리 미디어의 홈페이지 노출 여부. false인 항목은 홈페이지 "최근 행사 미디어"/"고대 자료실"
+-- 목록에서 제외되지만 갤러리 전체보기 페이지에는 계속 노출됩니다. 기존 데이터도 계속 보이도록
+-- 기본값은 TRUE.
+ALTER TABLE gallery_items ADD COLUMN IF NOT EXISTS show_on_home BOOLEAN NOT NULL DEFAULT TRUE;
+
 -- ------------------------------------------------------------------------------
 -- 7. 테스트용 시드 데이터 (Seed Data)
 -- ------------------------------------------------------------------------------

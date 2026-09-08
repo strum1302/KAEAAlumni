@@ -95,6 +95,7 @@ export interface GalleryItem {
   mediaUrl: string
   thumbnailUrl?: string
   displayOrder: number
+  showOnHome: boolean
   eventId?: string
   eventTitle?: string
   articleId?: string

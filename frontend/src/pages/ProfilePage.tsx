@@ -16,6 +16,9 @@ export default function ProfilePage() {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [paymentsPage, setPaymentsPage] = useState(1)
+  const [changingPassword, setChangingPassword] = useState(false)
+  const [pwSaving, setPwSaving] = useState(false)
+  const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
   const [form, setForm] = useState({
     cellPhone: member?.cellPhone || '',
     homePhone: member?.homePhone || '',
@@ -71,6 +74,25 @@ export default function ProfilePage() {
       toast.error(err?.response?.data?.message || '수정에 실패했습니다.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (pwForm.newPassword !== pwForm.confirmPassword) {
+      toast.error('새 비밀번호가 일치하지 않습니다.')
+      return
+    }
+    setPwSaving(true)
+    try {
+      await membersApi.changePassword({ currentPassword: pwForm.currentPassword, newPassword: pwForm.newPassword })
+      toast.success('비밀번호가 변경되었습니다.')
+      setChangingPassword(false)
+      setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || '비밀번호 변경에 실패했습니다.')
+    } finally {
+      setPwSaving(false)
     }
   }
 
@@ -193,6 +215,65 @@ export default function ProfilePage() {
               <button
                 type="button"
                 onClick={() => setEditing(false)}
+                className="text-sm px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50"
+              >
+                취소
+              </button>
+            </div>
+          </form>
+        )}
+      </section>
+
+      <section className="bg-white border border-gray-100 rounded-2xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-bold text-crimson">비밀번호 변경</h2>
+          {!changingPassword && (
+            <button
+              onClick={() => setChangingPassword(true)}
+              className="text-sm text-crimson font-medium px-3 py-1.5 bg-crimson-50 rounded hover:bg-crimson-100"
+            >
+              비밀번호 변경
+            </button>
+          )}
+        </div>
+
+        {changingPassword && (
+          <form onSubmit={handleChangePassword} className="space-y-3">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">현재 비밀번호</label>
+              <input
+                type="password" required value={pwForm.currentPassword}
+                onChange={(e) => setPwForm((f) => ({ ...f, currentPassword: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">새 비밀번호 (8자 이상)</label>
+              <input
+                type="password" required minLength={8} value={pwForm.newPassword}
+                onChange={(e) => setPwForm((f) => ({ ...f, newPassword: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">새 비밀번호 확인</label>
+              <input
+                type="password" required value={pwForm.confirmPassword}
+                onChange={(e) => setPwForm((f) => ({ ...f, confirmPassword: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button
+                type="submit"
+                disabled={pwSaving}
+                className="bg-crimson text-white text-sm px-4 py-2 rounded-lg hover:bg-crimson-800 disabled:opacity-50"
+              >
+                {pwSaving ? '변경 중...' : '변경'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setChangingPassword(false); setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' }) }}
                 className="text-sm px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50"
               >
                 취소
