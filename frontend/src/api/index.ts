@@ -89,6 +89,10 @@ export const articlesApi = {
   update: (id: string, data: { title: string; content: string }) =>
     api.put(`/articles/${id}`, data),
   delete: (id: string) => api.delete(`/articles/${id}`),
+  addComment: (id: string, data: { authorName: string; content: string }) =>
+    api.post(`/articles/${id}/comments`, data),
+  deleteComment: (id: string, commentId: string) => api.delete(`/articles/${id}/comments/${commentId}`),
+  toggleLike: (id: string) => api.post(`/articles/${id}/like`),
 }
 
 // ── Gallery API ───────────────────────────────────

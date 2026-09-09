@@ -10,6 +10,15 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ── Railway 배포 시 포트 바인딩 ─────────────────────
+// Railway는 컨테이너에 PORT 환경변수를 주입하고 그 포트로만 트래픽을 보냅니다.
+// 로컬 개발(dotnet run)에서는 PORT가 없으므로 launchSettings.json의 5000번을 그대로 사용합니다.
+var railwayPort = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(railwayPort))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{railwayPort}");
+}
+
 // ── Serilog ──────────────────────────────────────
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -45,6 +54,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 // ── CORS ─────────────────────────────────────────
+// Frontend:Url 에 콤마(,)로 여러 origin을 넣을 수 있습니다.
+// 예: "http://localhost:5173,https://kaeaalumni.vercel.app"
 var allowedOrigins = (builder.Configuration["Frontend:Url"] ?? "http://localhost:5173")
     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
@@ -63,6 +74,9 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<IAuthService, KAEAAlumni.Infrastructure.Services.AuthService>();
 
 // ── DI - Repositories ────────────────────────────
+// 게시글 댓글/좋아요는 전용 인터페이스 없이 제네릭 IRepository<T>(기본 CRUD + FindAsync)만으로
+// 충분해 open generic으로 등록 (ArticleComment/ArticleLike에 주입해서 사용).
+builder.Services.AddScoped(typeof(IRepository<>), typeof(KAEAAlumni.Infrastructure.Repositories.Repository<>));
 builder.Services.AddScoped<IMemberRepository, KAEAAlumni.Infrastructure.Repositories.MemberRepository>();
 builder.Services.AddScoped<IEventRepository, KAEAAlumni.Infrastructure.Repositories.EventRepository>();
 builder.Services.AddScoped<IEventRsvpRepository, KAEAAlumni.Infrastructure.Repositories.EventRsvpRepository>();

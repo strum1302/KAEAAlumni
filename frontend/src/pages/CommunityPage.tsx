@@ -156,6 +156,9 @@ export default function CommunityPage() {
               </span>
               <span className="text-xs text-gray-400 shrink-0">
                 {a.authorName} · {format(new Date(a.createdAt), 'yyyy.MM.dd')} · 조회 {a.viewCount}
+                {(a.category === 'FREE' || a.category === 'STORY') && (
+                  <> · 댓글 {a.commentCount} · 좋아요 {a.likeCount}</>
+                )}
               </span>
             </Link>
           </li>

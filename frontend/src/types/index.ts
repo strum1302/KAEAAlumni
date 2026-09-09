@@ -75,13 +75,27 @@ export interface ArticleList {
   category: ArticleCategory
   title: string
   authorName: string
+  authorId?: string
   viewCount: number
+  commentCount: number
+  likeCount: number
+  createdAt: string
+}
+
+export interface ArticleComment {
+  id: string
+  articleId: string
+  memberId: string
+  authorName: string
+  content: string
   createdAt: string
 }
 
 export interface ArticleDetail extends ArticleList {
   content: string
   galleryItems: GalleryItem[]
+  likedByMe: boolean
+  comments: ArticleComment[]
 }
 
 // ── Gallery ─────────────────────────────────────────────

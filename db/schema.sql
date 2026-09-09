@@ -167,6 +167,31 @@ ALTER TABLE events ADD COLUMN IF NOT EXISTS google_maps_url TEXT;
 ALTER TABLE gallery_items ADD COLUMN IF NOT EXISTS show_on_home BOOLEAN NOT NULL DEFAULT TRUE;
 
 -- ------------------------------------------------------------------------------
+-- 게시글 댓글 및 좋아요 확장 (자유게시판/우리 이야기 전용, 로그인 회원만 사용 가능)
+-- ------------------------------------------------------------------------------
+-- 작성자 회원 ID. 본인 글 수정/삭제 권한 판단에 사용. 이 컬럼 추가 이전에 작성된 글은 NULL.
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS author_id UUID REFERENCES members(id) ON DELETE SET NULL;
+
+CREATE TABLE IF NOT EXISTS article_comments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    article_id UUID NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+    member_id UUID NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+    author_name VARCHAR(100) NOT NULL,          -- 작성 시점 "이름 (입학연도 학과)" 스냅샷
+    content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_article_comments_article_id ON article_comments(article_id);
+
+CREATE TABLE IF NOT EXISTS article_likes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    article_id UUID NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+    member_id UUID NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(article_id, member_id)                -- 회원 1명당 게시글 1개에 좋아요 1개 (중복 방지, 토글용)
+);
+CREATE INDEX IF NOT EXISTS idx_article_likes_article_id ON article_likes(article_id);
+
+-- ------------------------------------------------------------------------------
 -- 7. 테스트용 시드 데이터 (Seed Data)
 -- ------------------------------------------------------------------------------
 -- 관리자 계정 (비밀번호: Admin1234! — 최초 로그인 후 반드시 변경하세요)

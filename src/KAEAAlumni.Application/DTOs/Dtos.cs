@@ -80,13 +80,16 @@ public record CreateEventRsvpDto(
     string? Note
 );
 
-// ── Article (Notice / Story / Fellowship / History) ──────
+// ── Article (Notice / Story / Fellowship / History / Free) ──
 public record ArticleListDto(
     Guid Id,
     string Category,
     string Title,
     string AuthorName,
+    Guid? AuthorId,
     int ViewCount,
+    int CommentCount,
+    int LikeCount,
     DateTime CreatedAt
 );
 
@@ -96,9 +99,13 @@ public record ArticleDetailDto(
     string Title,
     string Content,
     string AuthorName,
+    Guid? AuthorId,
     int ViewCount,
+    int LikeCount,
+    bool LikedByMe,
     DateTime CreatedAt,
-    List<GalleryItemDto> GalleryItems
+    List<GalleryItemDto> GalleryItems,
+    List<ArticleCommentDto> Comments
 );
 
 public record CreateArticleDto(
@@ -110,6 +117,21 @@ public record CreateArticleDto(
 
 public record UpdateArticleDto(
     string Title,
+    string Content
+);
+
+// ── ArticleComment (자유게시판/우리 이야기 전용) ──────────
+public record ArticleCommentDto(
+    Guid Id,
+    Guid ArticleId,
+    Guid MemberId,
+    string AuthorName,
+    string Content,
+    DateTime CreatedAt
+);
+
+public record CreateArticleCommentDto(
+    string AuthorName,
     string Content
 );
 

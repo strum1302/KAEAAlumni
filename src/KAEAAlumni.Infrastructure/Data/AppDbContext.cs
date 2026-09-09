@@ -11,6 +11,8 @@ public class AppDbContext : DbContext
     public DbSet<Event> Events => Set<Event>();
     public DbSet<EventRsvp> EventRsvps => Set<EventRsvp>();
     public DbSet<Article> Articles => Set<Article>();
+    public DbSet<ArticleComment> ArticleComments => Set<ArticleComment>();
+    public DbSet<ArticleLike> ArticleLikes => Set<ArticleLike>();
     public DbSet<GalleryItem> GalleryItems => Set<GalleryItem>();
     public DbSet<Payment> Payments => Set<Payment>();
 
@@ -99,8 +101,38 @@ public class AppDbContext : DbContext
             e.Property(a => a.Title).HasColumnName("title").HasMaxLength(255);
             e.Property(a => a.Content).HasColumnName("content");
             e.Property(a => a.AuthorName).HasColumnName("author_name").HasMaxLength(100);
+            e.Property(a => a.AuthorId).HasColumnName("author_id");
             e.Property(a => a.ViewCount).HasColumnName("view_count");
             e.Property(a => a.CreatedAt).HasColumnName("created_at");
+        });
+
+        // ── article_comments (자유게시판/우리 이야기 전용) ─
+        modelBuilder.Entity<ArticleComment>(e =>
+        {
+            e.ToTable("article_comments");
+            e.HasIndex(c => c.ArticleId);
+            e.HasOne(c => c.Article).WithMany(a => a.Comments)
+                .HasForeignKey(c => c.ArticleId).OnDelete(DeleteBehavior.Cascade);
+            e.Property(c => c.Id).HasColumnName("id");
+            e.Property(c => c.ArticleId).HasColumnName("article_id");
+            e.Property(c => c.MemberId).HasColumnName("member_id");
+            e.Property(c => c.AuthorName).HasColumnName("author_name").HasMaxLength(100);
+            e.Property(c => c.Content).HasColumnName("content");
+            e.Property(c => c.CreatedAt).HasColumnName("created_at");
+        });
+
+        // ── article_likes (자유게시판/우리 이야기 전용) ────
+        modelBuilder.Entity<ArticleLike>(e =>
+        {
+            e.ToTable("article_likes");
+            e.HasIndex(l => l.ArticleId);
+            e.HasIndex(l => new { l.ArticleId, l.MemberId }).IsUnique();
+            e.HasOne(l => l.Article).WithMany(a => a.Likes)
+                .HasForeignKey(l => l.ArticleId).OnDelete(DeleteBehavior.Cascade);
+            e.Property(l => l.Id).HasColumnName("id");
+            e.Property(l => l.ArticleId).HasColumnName("article_id");
+            e.Property(l => l.MemberId).HasColumnName("member_id");
+            e.Property(l => l.CreatedAt).HasColumnName("created_at");
         });
 
         // ── gallery_items ────────────────────────────────

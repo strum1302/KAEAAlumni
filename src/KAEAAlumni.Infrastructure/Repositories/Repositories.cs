@@ -131,7 +131,8 @@ public class ArticleRepository : Repository<Article>, IArticleRepository
     public async Task<(List<Article> Articles, int Total)> GetPagedAsync(
         ArticleCategory? category, int page, int pageSize)
     {
-        var query = _db.Articles.AsQueryable();
+        // 목록에서도 댓글/좋아요 개수를 함께 보여주기 위해 Include.
+        var query = _db.Articles.Include(a => a.Comments).Include(a => a.Likes).AsQueryable();
 
         if (category.HasValue)
         {
@@ -154,6 +155,8 @@ public class ArticleRepository : Repository<Article>, IArticleRepository
     public async Task<Article?> GetWithGalleryAsync(Guid id)
         => await _db.Articles
             .Include(a => a.GalleryItems)
+            .Include(a => a.Comments)
+            .Include(a => a.Likes)
             .FirstOrDefaultAsync(a => a.Id == id);
 }
 
