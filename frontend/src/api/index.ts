@@ -119,6 +119,7 @@ export const paymentsApi = {
   getSummary: (year: number) => api.get('/payments/summary', { params: { year } }),
   create: (data: object) => api.post('/payments', data),
   update: (id: string, data: object) => api.put(`/payments/${id}`, data),
+  remove: (id: string) => api.delete(`/payments/${id}`),
 }
 
 export default api

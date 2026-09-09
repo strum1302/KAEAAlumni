@@ -16,12 +16,13 @@ const PAGE_SIZE = 20
 export default function AdminPaymentsPage() {
   const { member } = useAuthStore()
   const isAdmin = member?.role === 'ADMIN'
-  // 회계 담당(임원 직책 "회계")도 관리자와 동일하게 회비 수납 내역을 등록할 수 있습니다.
+  // 회계 담당(임원 직책 "회계")도 관리자와 동일하게 회비 수납 내역을 등록/수정/삭제할 수 있습니다.
   const canManagePayments = isAdmin || member?.officerTitle === '회계'
   const queryClient = useQueryClient()
   const [year, setYear] = useState(currentYear)
   const [typeFilter, setTypeFilter] = useState<'ALL' | 'MEMBERSHIP_FEE' | 'MEMBERSHIP_FEE_BOARD' | 'DONATION' | 'EVENT_FEE'>('ALL')
   const [showAdd, setShowAdd] = useState(false)
+  const [editing, setEditing] = useState<Payment | null>(null)
   const [page, setPage] = useState(1)
 
   useEffect(() => setPage(1), [year, typeFilter])
@@ -39,6 +40,22 @@ export default function AdminPaymentsPage() {
   })
 
   const { sorted, sortKey, direction, toggleSort } = useSort(payments?.items, 'paymentDate', 'desc')
+
+  const refreshAll = () => {
+    refetch()
+    queryClient.invalidateQueries({ queryKey: ['payments', 'summary'] })
+  }
+
+  const handleDelete = async (p: Payment) => {
+    if (!confirm(`${p.memberName}님의 ${format(new Date(p.paymentDate), 'yyyy-MM-dd')} 납부 내역($${p.amount.toFixed(2)})을 삭제할까요?`)) return
+    try {
+      await paymentsApi.remove(p.id)
+      toast.success('삭제되었습니다.')
+      refreshAll()
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || '삭제에 실패했습니다.')
+    }
+  }
 
   const methodLabel = (m: string) => ({ ZELLE: 'ZELLE', VENMO: 'VENMO', CHECK: 'CHECK', CREDIT_CARD: 'CREDIT CARD', CASH: 'CASH' }[m] || m)
   const typeLabel = (t: string) => ({
@@ -94,6 +111,7 @@ export default function AdminPaymentsPage() {
               <th className="text-left px-4 py-2">납부수단/Ref#</th>
               <th className="text-left px-4 py-2">세부목적/메모</th>
               <SortableTh label="영수증" active={sortKey === 'receiptIssued'} direction={direction} onClick={() => toggleSort('receiptIssued')} />
+              {canManagePayments && <th className="text-left px-4 py-2">관리</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -110,10 +128,16 @@ export default function AdminPaymentsPage() {
                     {p.receiptIssued ? '완료' : '미발행'}
                   </span>
                 </td>
+                {canManagePayments && (
+                  <td className="px-4 py-2 whitespace-nowrap">
+                    <button onClick={() => setEditing(p)} className="text-xs text-crimson font-medium hover:underline mr-3">수정</button>
+                    <button onClick={() => handleDelete(p)} className="text-xs text-gray-400 font-medium hover:underline hover:text-red-500">삭제</button>
+                  </td>
+                )}
               </tr>
             ))}
             {!payments?.items.length && (
-              <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-400">납부 내역이 없습니다.</td></tr>
+              <tr><td colSpan={canManagePayments ? 8 : 7} className="px-4 py-6 text-center text-gray-400">납부 내역이 없습니다.</td></tr>
             )}
           </tbody>
         </table>
@@ -122,10 +146,10 @@ export default function AdminPaymentsPage() {
       <Pagination page={page} totalPages={payments?.totalPages ?? 1} onChange={setPage} />
 
       {showAdd && (
-        <AddPaymentModal onClose={() => setShowAdd(false)} onCreated={() => {
-          refetch()
-          queryClient.invalidateQueries({ queryKey: ['payments', 'summary'] })
-        }} />
+        <PaymentModal onClose={() => setShowAdd(false)} onSaved={() => { refreshAll(); setShowAdd(false) }} />
+      )}
+      {editing && (
+        <PaymentModal payment={editing} onClose={() => setEditing(null)} onSaved={() => { refreshAll(); setEditing(null) }} />
       )}
     </div>
   )
@@ -140,11 +164,21 @@ function SummaryCard({ label, value }: { label: string; value?: number }) {
   )
 }
 
-function AddPaymentModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+// 등록/수정 공용 모달. payment가 있으면 수정 모드, 없으면 등록 모드로 동작합니다.
+function PaymentModal({ payment, onClose, onSaved }: { payment?: Payment; onClose: () => void; onSaved: () => void }) {
+  const isEdit = !!payment
   const [members, setMembers] = useState<Array<{ id: string; name: string; entryYear: number; major: string }>>([])
   const [form, setForm] = useState({
-    memberId: '', paymentType: 'MEMBERSHIP_FEE', targetYear: String(currentYear),
-    amount: '', paymentMethod: 'ZELLE', transactionId: '', purposeDetail: '', receiptIssued: false,
+    memberId: payment?.memberId ?? '',
+    paymentType: payment?.paymentType ?? 'MEMBERSHIP_FEE',
+    targetYear: String(payment?.targetYear ?? currentYear),
+    amount: payment ? String(payment.amount) : '',
+    paymentDate: payment ? format(new Date(payment.paymentDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
+    paymentMethod: payment?.paymentMethod ?? 'ZELLE',
+    transactionId: payment?.transactionId ?? '',
+    purposeDetail: payment?.purposeDetail ?? '',
+    receiptIssued: payment?.receiptIssued ?? false,
+    paymentStatus: payment?.paymentStatus ?? 'COMPLETED',
   })
   const [saving, setSaving] = useState(false)
 
@@ -156,16 +190,22 @@ function AddPaymentModal({ onClose, onCreated }: { onClose: () => void; onCreate
     e.preventDefault()
     setSaving(true)
     try {
-      await paymentsApi.create({
+      const payload = {
         ...form,
         targetYear: Number(form.targetYear),
         amount: Number(form.amount),
-      })
-      toast.success('수납 내역이 등록되었습니다.')
-      onCreated()
-      onClose()
+        paymentDate: form.paymentDate,
+      }
+      if (isEdit) {
+        await paymentsApi.update(payment!.id, payload)
+        toast.success('수정되었습니다.')
+      } else {
+        await paymentsApi.create(payload)
+        toast.success('수납 내역이 등록되었습니다.')
+      }
+      onSaved()
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || '등록에 실패했습니다.')
+      toast.error(err?.response?.data?.message || (isEdit ? '수정에 실패했습니다.' : '등록에 실패했습니다.'))
     } finally {
       setSaving(false)
     }
@@ -174,7 +214,7 @@ function AddPaymentModal({ onClose, onCreated }: { onClose: () => void; onCreate
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
       <div className="bg-white rounded-2xl p-6 w-full max-w-md space-y-4 max-h-[90vh] overflow-y-auto">
-        <h3 className="font-bold text-gray-800">수납 내역 등록</h3>
+        <h3 className="font-bold text-gray-800">{isEdit ? '수납 내역 수정' : '수납 내역 등록'}</h3>
         <form onSubmit={submit} className="space-y-3">
           <select required value={form.memberId} onChange={(e) => setForm({ ...form, memberId: e.target.value })}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
@@ -185,7 +225,7 @@ function AddPaymentModal({ onClose, onCreated }: { onClose: () => void; onCreate
           </select>
           <div className="grid grid-cols-2 gap-3">
             <select value={form.paymentType} onChange={(e) => {
-              const paymentType = e.target.value
+              const paymentType = e.target.value as typeof form.paymentType
               // 연회비/연회비+이사회비 선택 시 기본 금액을 채워주되, 이미 금액을 입력했다면 덮어쓰지 않습니다.
               const defaultAmount = paymentType === 'MEMBERSHIP_FEE' ? '100' : paymentType === 'MEMBERSHIP_FEE_BOARD' ? '200' : ''
               setForm((f) => ({ ...f, paymentType, amount: f.amount || defaultAmount }))
@@ -203,21 +243,32 @@ function AddPaymentModal({ onClose, onCreated }: { onClose: () => void; onCreate
             <input required type="number" step="0.01" placeholder="금액 ($)" value={form.amount}
               onChange={(e) => setForm({ ...form, amount: e.target.value })}
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-            <select value={form.paymentMethod} onChange={(e) => setForm({ ...form, paymentMethod: e.target.value })}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-              <option value="ZELLE">Zelle</option>
-              <option value="VENMO">Venmo</option>
-              <option value="CHECK">Check</option>
-              <option value="CREDIT_CARD">Credit Card</option>
-              <option value="CASH">Cash</option>
-            </select>
+            <input required type="date" value={form.paymentDate}
+              onChange={(e) => setForm({ ...form, paymentDate: e.target.value })}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
           </div>
+          <select value={form.paymentMethod} onChange={(e) => setForm({ ...form, paymentMethod: e.target.value })}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            <option value="ZELLE">Zelle</option>
+            <option value="VENMO">Venmo</option>
+            <option value="CHECK">Check</option>
+            <option value="CREDIT_CARD">Credit Card</option>
+            <option value="CASH">Cash</option>
+          </select>
           <input placeholder="Ref# / 수표번호" value={form.transactionId}
             onChange={(e) => setForm({ ...form, transactionId: e.target.value })}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
           <input placeholder="세부목적/메모" value={form.purposeDetail}
             onChange={(e) => setForm({ ...form, purposeDetail: e.target.value })}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          {isEdit && (
+            <select value={form.paymentStatus} onChange={(e) => setForm({ ...form, paymentStatus: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+              <option value="PENDING">대기중</option>
+              <option value="COMPLETED">완료</option>
+              <option value="CANCELLED">취소됨</option>
+            </select>
+          )}
           <label className="flex items-center gap-2 text-sm text-gray-600">
             <input type="checkbox" checked={form.receiptIssued}
               onChange={(e) => setForm({ ...form, receiptIssued: e.target.checked })} />
@@ -227,7 +278,7 @@ function AddPaymentModal({ onClose, onCreated }: { onClose: () => void; onCreate
             <button type="button" onClick={onClose} className="flex-1 border border-gray-300 rounded-lg py-2 text-sm">취소</button>
             <button type="submit" disabled={saving}
               className="flex-1 bg-crimson text-white rounded-lg py-2 text-sm disabled:opacity-60">
-              {saving ? '등록 중...' : '등록'}
+              {saving ? '저장 중...' : isEdit ? '수정' : '등록'}
             </button>
           </div>
         </form>

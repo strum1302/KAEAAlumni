@@ -201,8 +201,12 @@ public record CreatePaymentDto(
 );
 
 public record UpdatePaymentDto(
+    Guid MemberId,
+    string PaymentType,
+    int TargetYear,
     decimal Amount,
     string PaymentMethod,
+    DateTime? PaymentDate,
     string? TransactionId,
     string? PurposeDetail,
     string PaymentStatus,

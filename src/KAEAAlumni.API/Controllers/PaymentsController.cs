@@ -114,7 +114,7 @@ public class PaymentsController : ControllerBase
         return Ok(new { id = payment.Id });
     }
 
-    // 수납 내역 수정 (미발행 영수증 처리 등, Admin 또는 회계 담당 임원)
+    // 수납 내역 수정 (금액/납부일자/구분 등 잘못 입력된 내역 정정용, Admin 또는 회계 담당 임원)
     [Authorize(Roles = "OFFICER,ADMIN")]
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdatePayment(Guid id, [FromBody] UpdatePaymentDto dto)
@@ -124,18 +124,39 @@ public class PaymentsController : ControllerBase
         var payment = await _paymentRepo.GetByIdAsync(id);
         if (payment == null) return NotFound();
 
+        if (!Enum.TryParse<PaymentType>(dto.PaymentType, true, out var paymentType))
+            return BadRequest(new { message = "유효하지 않은 납부 구분입니다." });
         if (!Enum.TryParse<PaymentMethod>(dto.PaymentMethod, true, out var paymentMethod))
             return BadRequest(new { message = "유효하지 않은 납부 수단입니다." });
         if (!Enum.TryParse<PaymentStatus>(dto.PaymentStatus, true, out var paymentStatus))
             return BadRequest(new { message = "유효하지 않은 납부 상태입니다." });
 
+        payment.MemberId = dto.MemberId;
+        payment.PaymentType = paymentType;
+        payment.TargetYear = dto.TargetYear;
         payment.Amount = dto.Amount;
         payment.PaymentMethod = paymentMethod;
+        payment.PaymentDate = dto.PaymentDate ?? payment.PaymentDate;
         payment.TransactionId = dto.TransactionId;
         payment.PurposeDetail = dto.PurposeDetail;
         payment.PaymentStatus = paymentStatus;
         payment.ReceiptIssued = dto.ReceiptIssued;
 
+        await _paymentRepo.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // 수납 내역 삭제 (잘못 등록된 내역 정리용, Admin 또는 회계 담당 임원)
+    [Authorize(Roles = "OFFICER,ADMIN")]
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeletePayment(Guid id)
+    {
+        if (!CanManagePayments()) return Forbid();
+
+        var payment = await _paymentRepo.GetByIdAsync(id);
+        if (payment == null) return NotFound();
+
+        await _paymentRepo.DeleteAsync(payment);
         await _paymentRepo.SaveChangesAsync();
         return NoContent();
     }
