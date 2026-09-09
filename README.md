@@ -49,7 +49,7 @@ KPickleball 프로젝트와 동일한 방식을 따릅니다.
 2. 교우회 소개 (About) — 인사말/연혁, 임원진, 교가 아카이브
 3. 행사 및 모임 (Events) — 목록/캘린더, 상세 페이지(RSVP + 하부 사진/영상 갤러리)
 4. 미디어 갤러리 (Gallery) — 전체/사진/영상 필터, 행사별 앨범
-5. 커뮤니티 (Community) — 공지사항(Notice) / 우리 이야기(Story) / 장학기금(Fellowship)
+5. 커뮤니티 (Community) — 공지사항(Notice) / 우리 이야기(Story) / 후원(Fellowship)
 6. 교우 명부 등록 (Join) — 신입 교우 등록 (Cell/Home Phone 분리, 미국 주소 체계)
 7. 회비 및 후원 (Giving & Admin) — 납부 안내, 수납/도네이션 대시보드
 
@@ -117,7 +117,7 @@ npm run dev
 | GET | /api/events/{id} | 행사 상세 | - |
 | POST | /api/events/{id}/rsvps | 참가 신청 (RSVP) | - (비회원 가능) |
 | GET | /api/events/{id}/rsvps | 참가자 명단 | Officer/Admin |
-| GET | /api/articles?category=NOTICE | 공지/이야기/장학기금/연혁 | - |
+| GET | /api/articles?category=NOTICE | 공지/이야기/후원/연혁 | - |
 | GET | /api/gallery?mediaType=PHOTO | 갤러리 (사진/영상 필터) | - |
 | POST | /api/gallery | 미디어 등록 | Officer/Admin |
 | GET | /api/payments | 수납 내역 | Officer/Admin |

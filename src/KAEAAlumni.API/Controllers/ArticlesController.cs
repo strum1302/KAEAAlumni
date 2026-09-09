@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace KAEAAlumni.API.Controllers;
 
 // ── 게시판: 공지사항(Notice) / 우리 이야기(Story) / 자유게시판(Free) /
-//    미중서부 장학기금(Fellowship) / 연혁(History) ───────
+//    미중서부 후원(Fellowship) / 연혁(History) ───────
 // 댓글/좋아요는 자유게시판(FREE)·우리 이야기(STORY)에서만 사용 가능 (로그인 회원 전용).
 [ApiController]
 [Route("api/[controller]")]

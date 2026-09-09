@@ -124,7 +124,7 @@ CREATE TABLE payments (
     payment_date DATE NOT NULL DEFAULT CURRENT_DATE,-- 실제 납부 일자
 
     transaction_id VARCHAR(100),                -- Zelle 확인번호 또는 수표 번호(Check No.)
-    purpose_detail VARCHAR(255),                -- 후원 목적 세부 (예: 청년 교우 장학기금, 개교 기념 발전기금)
+    purpose_detail VARCHAR(255),                -- 후원 목적 세부 (예: 청년 교우 후원, 행사 후원금)
     receipt_issued BOOLEAN DEFAULT FALSE,       -- 기부금 영수증/감사증 발행 여부
     note TEXT,                                  -- 비고
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -230,4 +230,4 @@ VALUES
 INSERT INTO payments (member_id, payment_type, target_year, amount, payment_method, payment_status, payment_date, transaction_id, purpose_detail, receipt_issued)
 VALUES
 ('b0000000-0000-0000-0000-000000000001', 'MEMBERSHIP_FEE', 2026, 100.00, 'ZELLE', 'COMPLETED', '2026-01-15', 'ZEL-982341', '2026년 정기 연회비', true),
-('b0000000-0000-0000-0000-000000000001', 'DONATION', 2026, 500.00, 'CHECK', 'COMPLETED', '2026-02-10', 'CHK-1052', '미중서부 고대 장학기금', true);
+('b0000000-0000-0000-0000-000000000001', 'DONATION', 2026, 500.00, 'CHECK', 'COMPLETED', '2026-02-10', 'CHK-1052', '미중서부 고대 후원금', true);

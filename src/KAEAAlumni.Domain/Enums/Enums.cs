@@ -18,7 +18,7 @@ public enum ArticleCategory
 {
     NOTICE = 0,      // 공지사항
     STORY = 1,       // 우리 이야기
-    FELLOWSHIP = 2,  // 미중서부 장학기금
+    FELLOWSHIP = 2,  // 미중서부 후원
     HISTORY = 3,     // 교우회 연혁
     FREE = 4         // 자유게시판
 }

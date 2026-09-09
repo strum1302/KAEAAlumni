@@ -76,7 +76,7 @@ export default function AdminPaymentsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <SummaryCard label={`총 수납액 (${year})`} value={summary?.totalAmount} />
         <SummaryCard label="정기 연회비 합계" value={summary?.membershipFeeTotal} />
-        <SummaryCard label="장학기금 / 도네이션" value={summary?.donationTotal} />
+        <SummaryCard label="도네이션 합계" value={summary?.donationTotal} />
       </div>
 
       {/* 필터 + 등록 버튼 */}

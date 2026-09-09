@@ -16,12 +16,12 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'NOTICE', label: '공지사항' },
   { key: 'STORY', label: '우리 이야기' },
   { key: 'FREE', label: '자유게시판' },
-  { key: 'FELLOWSHIP', label: '미중서부 장학기금' },
+  { key: 'FELLOWSHIP', label: '미중서부 후원' },
 ]
 
 // "전체" 탭에서 각 글이 어느 게시판 글인지 보여주기 위한 카테고리 라벨.
 const CATEGORY_LABELS: Record<ArticleCategory, string> = {
-  NOTICE: '공지사항', STORY: '우리 이야기', FREE: '자유게시판', FELLOWSHIP: '미중서부 장학기금', HISTORY: '연혁',
+  NOTICE: '공지사항', STORY: '우리 이야기', FREE: '자유게시판', FELLOWSHIP: '미중서부 후원', HISTORY: '연혁',
 }
 
 const PAGE_SIZE = 15
