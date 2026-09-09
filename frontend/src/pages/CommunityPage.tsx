@@ -154,10 +154,22 @@ export default function CommunityPage() {
                 )}
                 <span className="truncate">{a.title}</span>
               </span>
-              <span className="text-xs text-gray-400 shrink-0">
-                {a.authorName} · {format(new Date(a.createdAt), 'yyyy.MM.dd')} · 조회 {a.viewCount}
+              <span className="flex items-center gap-1.5 text-xs text-gray-400 shrink-0">
+                <span className="whitespace-nowrap">{a.authorName} · {format(new Date(a.createdAt), 'yyyy.MM.dd')}</span>
+                <span className="px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-medium">
+                  조회 {a.viewCount}
+                </span>
                 {(a.category === 'FREE' || a.category === 'STORY') && (
-                  <> · 댓글 {a.commentCount} · 좋아요 {a.likeCount}</>
+                  <>
+                    <span className="px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-medium">
+                      댓글 {a.commentCount}
+                    </span>
+                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
+                      a.likeCount > 0 ? 'bg-crimson-50 text-crimson' : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      ♥ {a.likeCount}
+                    </span>
+                  </>
                 )}
               </span>
             </Link>
