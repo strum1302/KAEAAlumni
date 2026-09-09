@@ -1,13 +1,25 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
-import { useState } from 'react'
-import { Menu, X } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Menu, X, ChevronDown } from 'lucide-react'
 
 export default function Layout() {
   const { isAuthenticated, member, logout } = useAuthStore()
   const navigate = useNavigate()
   const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false)
+  const adminMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (adminMenuRef.current && !adminMenuRef.current.contains(e.target as Node)) {
+        setAdminMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const handleLogout = () => {
     logout()
@@ -55,10 +67,10 @@ export default function Layout() {
           </Link>
 
           {/* 데스크탑 네비게이션 */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-1 flex-shrink-0">
             {navLinks.map(link => (
               <Link key={link.to} to={link.to}
-                className={`px-3 py-2 text-sm font-medium transition-colors rounded ${
+                className={`px-3 py-2 text-sm font-medium transition-colors rounded whitespace-nowrap ${
                   isActive(link.to)
                     ? 'text-crimson border-b-2 border-crimson'
                     : 'text-gray-700 hover:text-crimson hover:bg-crimson-50'
@@ -69,42 +81,55 @@ export default function Layout() {
           </nav>
 
           {/* 로그인/등록 */}
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
-                {canManage && (
-                  <Link to="/admin/payments"
-                    className="text-sm text-crimson font-medium px-3 py-1.5 bg-crimson-50 rounded hover:bg-crimson-100">
-                    관리자 대시보드
-                  </Link>
+                {(canManage || member?.role === 'ADMIN') && (
+                  <div className="relative" ref={adminMenuRef}>
+                    <button onClick={() => setAdminMenuOpen(v => !v)}
+                      className="flex items-center gap-1 text-sm text-crimson font-medium px-3 py-1.5 bg-crimson-50 rounded hover:bg-crimson-100 whitespace-nowrap">
+                      관리 메뉴
+                      <ChevronDown size={14} className={adminMenuOpen ? 'rotate-180 transition-transform' : 'transition-transform'} />
+                    </button>
+                    {adminMenuOpen && (
+                      <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-gray-100 rounded-lg shadow-lg py-1 z-50">
+                        {canManage && (
+                          <Link to="/admin/payments" onClick={() => setAdminMenuOpen(false)}
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-crimson-50 hover:text-crimson whitespace-nowrap">
+                            관리자 대시보드
+                          </Link>
+                        )}
+                        {canManage && (
+                          <Link to="/admin/emails" onClick={() => setAdminMenuOpen(false)}
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-crimson-50 hover:text-crimson whitespace-nowrap">
+                            메일 발송 내역
+                          </Link>
+                        )}
+                        {member?.role === 'ADMIN' && (
+                          <Link to="/admin/members" onClick={() => setAdminMenuOpen(false)}
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-crimson-50 hover:text-crimson whitespace-nowrap">
+                            교우 권한 관리
+                          </Link>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
-                {canManage && (
-                  <Link to="/admin/emails"
-                    className="text-sm text-crimson font-medium px-3 py-1.5 bg-crimson-50 rounded hover:bg-crimson-100">
-                    메일 발송 내역
-                  </Link>
-                )}
-                {member?.role === 'ADMIN' && (
-                  <Link to="/admin/members"
-                    className="text-sm text-crimson font-medium px-3 py-1.5 bg-crimson-50 rounded hover:bg-crimson-100">
-                    교우 권한 관리
-                  </Link>
-                )}
-                <Link to="/profile" className="text-sm text-gray-700 hover:text-crimson font-medium">
+                <Link to="/profile" className="text-sm text-gray-700 hover:text-crimson font-medium whitespace-nowrap">
                   {member?.name} 님
                 </Link>
-                <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-red-500">
+                <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-red-500 whitespace-nowrap">
                   로그아웃
                 </button>
               </div>
             ) : (
               <>
                 <Link to="/login"
-                  className="text-sm text-gray-600 hover:text-crimson font-medium px-3 py-1.5">
+                  className="text-sm text-gray-600 hover:text-crimson font-medium px-3 py-1.5 whitespace-nowrap">
                   로그인
                 </Link>
                 <Link to="/join"
-                  className="bg-crimson text-white text-sm px-4 py-1.5 rounded hover:bg-crimson-800 transition-colors font-medium">
+                  className="bg-crimson text-white text-sm px-4 py-1.5 rounded hover:bg-crimson-800 transition-colors font-medium whitespace-nowrap">
                   교우 등록
                 </Link>
               </>
@@ -112,14 +137,14 @@ export default function Layout() {
           </div>
 
           {/* 모바일 메뉴 버튼 */}
-          <button className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+          <button className="lg:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
 
         {/* 모바일 메뉴 */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-100 bg-white">
+          <div className="lg:hidden border-t border-gray-100 bg-white">
             <div className="px-4 py-3 space-y-1">
               {navLinks.map(link => (
                 <Link key={link.to} to={link.to}
