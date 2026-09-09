@@ -192,6 +192,74 @@ CREATE TABLE IF NOT EXISTS article_likes (
 CREATE INDEX IF NOT EXISTS idx_article_likes_article_id ON article_likes(article_id);
 
 -- ------------------------------------------------------------------------------
+-- 메일 발송 이력 (email_batches / email_logs)
+-- 지금은 행사 공지(EVENT_NOTIFY) 발송에만 실제로 쓰이지만, 추후 게시글 알림/가입 인증/
+-- 비밀번호 재설정 메일도 같은 구조로 이력을 남길 수 있도록 kind를 범용으로 둠.
+-- 한 번의 발송 "행위"(배치)와 개별 수신자를 분리 — 배치 정보(제목/본문)가 수신자 수만큼
+-- 중복 저장되는 것을 피하기 위함.
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS email_batches (
+    id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+
+    -- EVENT_NOTIFY / ARTICLE_NOTIFY / SIGNUP_VERIFY / PASSWORD_RESET / MANUAL
+    kind              VARCHAR(30)  NOT NULL,
+    -- 행사 공지 메일일 때만 사용: ALL / RSVP / NOT_RSVP
+    target            VARCHAR(20),
+
+    event_id          UUID REFERENCES events(id)   ON DELETE SET NULL,
+    article_id        UUID REFERENCES articles(id) ON DELETE SET NULL,
+
+    subject           VARCHAR(300) NOT NULL,
+    body              TEXT         NOT NULL,
+
+    recipient_count   INTEGER      NOT NULL DEFAULT 0,
+    success_count     INTEGER      NOT NULL DEFAULT 0,
+    failure_count     INTEGER      NOT NULL DEFAULT 0,
+
+    -- PENDING / SENDING / COMPLETED / COMPLETED_WITH_ERRORS
+    status            VARCHAR(25)  NOT NULL DEFAULT 'PENDING',
+
+    -- 발송을 지시한 임원. 회원이 탈퇴해도 이력은 남기기 위해 이름을 함께 저장.
+    sent_by           UUID REFERENCES members(id) ON DELETE SET NULL,
+    sent_by_name      VARCHAR(100),
+
+    created_at        TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    completed_at      TIMESTAMP WITH TIME ZONE
+);
+CREATE INDEX IF NOT EXISTS idx_email_batches_created_at ON email_batches(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_email_batches_kind ON email_batches(kind);
+CREATE INDEX IF NOT EXISTS idx_email_batches_event_id ON email_batches(event_id);
+
+CREATE TABLE IF NOT EXISTS email_logs (
+    id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    batch_id       UUID NOT NULL REFERENCES email_batches(id) ON DELETE CASCADE,
+
+    -- 게스트 RSVP 수신자는 member_id가 NULL
+    member_id      UUID REFERENCES members(id) ON DELETE SET NULL,
+
+    to_email       VARCHAR(200) NOT NULL,
+    to_name        VARCHAR(100),
+
+    -- PENDING / SENT / FAILED
+    status         VARCHAR(20)  NOT NULL DEFAULT 'PENDING',
+    error_message  TEXT,
+    attempt_count  INTEGER      NOT NULL DEFAULT 0,
+
+    sent_at        TIMESTAMP WITH TIME ZONE,
+    created_at     TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_email_logs_batch_id ON email_logs(batch_id);
+CREATE INDEX IF NOT EXISTS idx_email_logs_status ON email_logs(status);
+CREATE INDEX IF NOT EXISTS idx_email_logs_to_email ON email_logs(to_email);
+
+-- 참고) 이번 달 누적 발송 건수 확인 — 관리자 화면의 "이번 달 누적 발송" 위젯이 사용하는 것과 동일한 조회.
+-- SELECT COUNT(*) FROM email_logs WHERE status = 'SENT' AND sent_at >= date_trunc('month', NOW());
+
+-- 참고) 1년 지난 개별 로그 정리 — 배치 요약(email_batches)은 남기고 로그만 삭제.
+-- Supabase 무료 티어 용량 관리를 위해 연 1회 정도 수동 실행 권장.
+-- DELETE FROM email_logs WHERE created_at < NOW() - INTERVAL '1 year';
+
+-- ------------------------------------------------------------------------------
 -- 7. 테스트용 시드 데이터 (Seed Data)
 -- ------------------------------------------------------------------------------
 -- 관리자 계정 (비밀번호: Admin1234! — 최초 로그인 후 반드시 변경하세요)

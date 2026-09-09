@@ -230,3 +230,31 @@ public class PaymentRepository : Repository<Payment>, IPaymentRepository
     public async Task<List<Payment>> GetByYearAsync(int year)
         => await _db.Payments.Where(p => p.TargetYear == year).ToListAsync();
 }
+
+// ── EmailBatch Repository ──────────────────────────────────
+public class EmailBatchRepository : Repository<EmailBatch>, IEmailBatchRepository
+{
+    public EmailBatchRepository(AppDbContext db) : base(db) { }
+
+    public async Task<(List<EmailBatch> Batches, int Total)> GetPagedAsync(
+        EmailKind? kind, int page, int pageSize)
+    {
+        var query = _db.EmailBatches.Include(b => b.Event).AsQueryable();
+
+        if (kind.HasValue)
+            query = query.Where(b => b.Kind == kind.Value);
+
+        query = query.OrderByDescending(b => b.CreatedAt);
+
+        var total = await query.CountAsync();
+        var batches = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        return (batches, total);
+    }
+
+    // 무료 SMTP 티어(월 발송 한도) 소진 속도를 가늠하기 위한 이번 달 누적 발송 성공 건수.
+    public async Task<int> CountSentThisMonthAsync()
+    {
+        var monthStart = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        return await _db.EmailLogs.CountAsync(l => l.Status == EmailLogStatus.SENT && l.SentAt >= monthStart);
+    }
+}

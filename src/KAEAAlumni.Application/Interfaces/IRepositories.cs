@@ -56,3 +56,10 @@ public interface IPaymentRepository : IRepository<Domain.Entities.Payment>
     Task<Domain.Entities.Payment?> GetWithMemberAsync(Guid id);
     Task<List<Domain.Entities.Payment>> GetByYearAsync(int year);
 }
+
+public interface IEmailBatchRepository : IRepository<Domain.Entities.EmailBatch>
+{
+    Task<(List<Domain.Entities.EmailBatch> Batches, int Total)> GetPagedAsync(
+        EmailKind? kind, int page, int pageSize);
+    Task<int> CountSentThisMonthAsync();
+}

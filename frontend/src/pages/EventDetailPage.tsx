@@ -22,6 +22,7 @@ export default function EventDetailPage() {
   const [tab, setTab] = useState<'PHOTO' | 'VIDEO'>('PHOTO')
   const [showAddMedia, setShowAddMedia] = useState(false)
   const [showRsvp, setShowRsvp] = useState(false)
+  const [showNotify, setShowNotify] = useState(false)
   const [selectedPhoto, setSelectedPhoto] = useState<GalleryItem | null>(null)
   const [rsvp, setRsvp] = useState({
     guestName: member?.name || '', email: member?.email || '', cellPhone: member?.cellPhone || '',
@@ -84,12 +85,22 @@ export default function EventDetailPage() {
       </div>
 
       {/* 온라인 참가신청 버튼 / RSVP 폼 - 버튼을 눌러야 신청서가 열립니다 */}
-      {!showRsvp ? (
-        <button onClick={() => setShowRsvp(true)}
-          className="bg-crimson text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-crimson-800 transition-colors">
-          온라인 참가신청
-        </button>
-      ) : (
+      <div className="flex flex-wrap gap-2">
+        {!showRsvp && (
+          <button onClick={() => setShowRsvp(true)}
+            className="bg-crimson text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-crimson-800 transition-colors">
+            온라인 참가신청
+          </button>
+        )}
+        {canManage && (
+          <button onClick={() => setShowNotify(true)}
+            className="border border-crimson text-crimson font-semibold px-5 py-2.5 rounded-lg hover:bg-crimson-50 transition-colors">
+            참가자에게 메일 보내기
+          </button>
+        )}
+      </div>
+
+      {showRsvp && (
         <div className="bg-white border border-gray-100 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold text-crimson">온라인 참가 신청 (RSVP)</h2>
@@ -176,6 +187,69 @@ export default function EventDetailPage() {
           queryClient.invalidateQueries({ queryKey: ['event', id] })
         }} />
       )}
+
+      {showNotify && (
+        <NotifyModal eventId={id!} onClose={() => setShowNotify(false)} />
+      )}
+    </div>
+  )
+}
+
+// 참가자 공지 메일 발송 모달. 실제 수신자 목록은 서버가 target 값을 보고 DB에서 조립하므로
+// (임의 주소로 발송하지 못하도록) 여기서는 대상 구분/제목/본문만 입력받아 보낸다.
+function NotifyModal({ eventId, onClose }: { eventId: string; onClose: () => void }) {
+  const [target, setTarget] = useState<'ALL' | 'RSVP' | 'NOT_RSVP'>('ALL')
+  const [subject, setSubject] = useState('')
+  const [body, setBody] = useState('')
+  const [sending, setSending] = useState(false)
+
+  const targetLabel = { ALL: '전체 회원', RSVP: '이 행사 신청자', NOT_RSVP: '이 행사 미신청 회원' }[target]
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!confirm(`${targetLabel}에게 메일을 발송합니다. 계속할까요?`)) return
+    setSending(true)
+    try {
+      const res = await eventsApi.notify(eventId, { target, subject, body })
+      toast.success(`${res.data.recipientCount}명에게 발송을 시작했습니다. 잠시 후 처리됩니다.`)
+      onClose()
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || '발송 요청에 실패했습니다.')
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-lg space-y-4">
+        <h3 className="font-bold text-gray-800">참가자에게 메일 보내기</h3>
+        <form onSubmit={submit} className="space-y-3">
+          <div className="flex gap-2">
+            {(['ALL', 'RSVP', 'NOT_RSVP'] as const).map((t) => (
+              <button key={t} type="button" onClick={() => setTarget(t)}
+                className={`px-3 py-1.5 text-sm rounded-full font-medium ${
+                  target === t ? 'bg-crimson text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}>
+                {{ ALL: '전체 회원', RSVP: '신청자만', NOT_RSVP: '미신청자만' }[t]}
+              </button>
+            ))}
+          </div>
+          <input required placeholder="제목" value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          <textarea required rows={8} placeholder="본문" value={body}
+            onChange={(e) => setBody(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          <div className="flex gap-2 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 border border-gray-300 rounded-lg py-2 text-sm">취소</button>
+            <button type="submit" disabled={sending}
+              className="flex-1 bg-crimson text-white rounded-lg py-2 text-sm disabled:opacity-60">
+              {sending ? '발송 요청 중...' : `${targetLabel}에게 발송`}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

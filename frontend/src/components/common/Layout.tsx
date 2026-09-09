@@ -78,6 +78,12 @@ export default function Layout() {
                     관리자 대시보드
                   </Link>
                 )}
+                {canManage && (
+                  <Link to="/admin/emails"
+                    className="text-sm text-crimson font-medium px-3 py-1.5 bg-crimson-50 rounded hover:bg-crimson-100">
+                    메일 발송 내역
+                  </Link>
+                )}
                 {member?.role === 'ADMIN' && (
                   <Link to="/admin/members"
                     className="text-sm text-crimson font-medium px-3 py-1.5 bg-crimson-50 rounded hover:bg-crimson-100">
@@ -136,6 +142,12 @@ export default function Layout() {
                     <Link to="/admin/payments" onClick={() => setMobileMenuOpen(false)}
                       className="block py-2 px-3 rounded text-sm font-medium text-crimson bg-crimson-50">
                       관리자 대시보드
+                    </Link>
+                  )}
+                  {canManage && (
+                    <Link to="/admin/emails" onClick={() => setMobileMenuOpen(false)}
+                      className="block py-2 px-3 rounded text-sm font-medium text-crimson bg-crimson-50">
+                      메일 발송 내역
                     </Link>
                   )}
                   {member?.role === 'ADMIN' && (

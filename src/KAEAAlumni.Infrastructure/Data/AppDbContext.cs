@@ -15,6 +15,8 @@ public class AppDbContext : DbContext
     public DbSet<ArticleLike> ArticleLikes => Set<ArticleLike>();
     public DbSet<GalleryItem> GalleryItems => Set<GalleryItem>();
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<EmailBatch> EmailBatches => Set<EmailBatch>();
+    public DbSet<EmailLog> EmailLogs => Set<EmailLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -182,6 +184,59 @@ public class AppDbContext : DbContext
             e.Property(p => p.ReceiptIssued).HasColumnName("receipt_issued");
             e.Property(p => p.Note).HasColumnName("note");
             e.Property(p => p.CreatedAt).HasColumnName("created_at");
+        });
+
+        // ── email_batches (발송 단위) ─────────────────────
+        modelBuilder.Entity<EmailBatch>(e =>
+        {
+            e.ToTable("email_batches");
+            e.HasIndex(b => b.CreatedAt);
+            e.HasIndex(b => b.Kind);
+            e.HasIndex(b => b.EventId);
+            e.HasOne(b => b.Event).WithMany()
+                .HasForeignKey(b => b.EventId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(b => b.Article).WithMany()
+                .HasForeignKey(b => b.ArticleId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(b => b.SentByMember).WithMany()
+                .HasForeignKey(b => b.SentBy).OnDelete(DeleteBehavior.SetNull);
+            e.Property(b => b.Id).HasColumnName("id");
+            e.Property(b => b.Kind).HasColumnName("kind").HasMaxLength(30).HasConversion<string>();
+            e.Property(b => b.Target).HasColumnName("target").HasMaxLength(20).HasConversion<string>();
+            e.Property(b => b.EventId).HasColumnName("event_id");
+            e.Property(b => b.ArticleId).HasColumnName("article_id");
+            e.Property(b => b.Subject).HasColumnName("subject").HasMaxLength(300);
+            e.Property(b => b.Body).HasColumnName("body");
+            e.Property(b => b.RecipientCount).HasColumnName("recipient_count");
+            e.Property(b => b.SuccessCount).HasColumnName("success_count");
+            e.Property(b => b.FailureCount).HasColumnName("failure_count");
+            e.Property(b => b.Status).HasColumnName("status").HasMaxLength(25).HasConversion<string>();
+            e.Property(b => b.SentBy).HasColumnName("sent_by");
+            e.Property(b => b.SentByName).HasColumnName("sent_by_name").HasMaxLength(100);
+            e.Property(b => b.CreatedAt).HasColumnName("created_at");
+            e.Property(b => b.CompletedAt).HasColumnName("completed_at");
+        });
+
+        // ── email_logs (수신자 단위) ──────────────────────
+        modelBuilder.Entity<EmailLog>(e =>
+        {
+            e.ToTable("email_logs");
+            e.HasIndex(l => l.BatchId);
+            e.HasIndex(l => l.Status);
+            e.HasIndex(l => l.ToEmail);
+            e.HasOne(l => l.Batch).WithMany(b => b.Logs)
+                .HasForeignKey(l => l.BatchId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(l => l.Member).WithMany()
+                .HasForeignKey(l => l.MemberId).OnDelete(DeleteBehavior.SetNull);
+            e.Property(l => l.Id).HasColumnName("id");
+            e.Property(l => l.BatchId).HasColumnName("batch_id");
+            e.Property(l => l.MemberId).HasColumnName("member_id");
+            e.Property(l => l.ToEmail).HasColumnName("to_email").HasMaxLength(200);
+            e.Property(l => l.ToName).HasColumnName("to_name").HasMaxLength(100);
+            e.Property(l => l.Status).HasColumnName("status").HasMaxLength(20).HasConversion<string>();
+            e.Property(l => l.ErrorMessage).HasColumnName("error_message");
+            e.Property(l => l.AttemptCount).HasColumnName("attempt_count");
+            e.Property(l => l.SentAt).HasColumnName("sent_at");
+            e.Property(l => l.CreatedAt).HasColumnName("created_at");
         });
     }
 }

@@ -83,6 +83,15 @@ builder.Services.AddScoped<IEventRsvpRepository, KAEAAlumni.Infrastructure.Repos
 builder.Services.AddScoped<IArticleRepository, KAEAAlumni.Infrastructure.Repositories.ArticleRepository>();
 builder.Services.AddScoped<IGalleryItemRepository, KAEAAlumni.Infrastructure.Repositories.GalleryItemRepository>();
 builder.Services.AddScoped<IPaymentRepository, KAEAAlumni.Infrastructure.Repositories.PaymentRepository>();
+builder.Services.AddScoped<IEmailBatchRepository, KAEAAlumni.Infrastructure.Repositories.EmailBatchRepository>();
+
+// ── DI - Email (무료 SMTP 서비스로 메일 발송) ────────────
+// 큐는 프로세스 내 싱글턴(인메모리)이라 Railway가 재시작되면 대기 중이던 배치가 유실될 수 있음
+// (테이블 status가 PENDING/SENDING으로 남으므로 관리자가 발송 내역 화면에서 확인/재시도 가능).
+// 여러 인스턴스로 확장하면 DB 폴링 등 별도 큐로 교체 필요.
+builder.Services.AddSingleton<IEmailQueue, KAEAAlumni.Infrastructure.Services.InMemoryEmailQueue>();
+builder.Services.AddScoped<IEmailSender, KAEAAlumni.Infrastructure.Services.SmtpEmailSender>();
+builder.Services.AddHostedService<KAEAAlumni.Infrastructure.Services.EmailDispatchService>();
 
 // ── Swagger ───────────────────────────────────────
 builder.Services.AddEndpointsApiExplorer();

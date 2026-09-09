@@ -141,6 +141,35 @@ export interface PaymentSummary {
   eventFeeTotal: number
 }
 
+// ── Email (발송 이력) ─────────────────────────────────────
+export type EmailTarget = 'ALL' | 'RSVP' | 'NOT_RSVP'
+export type EmailKind = 'EVENT_NOTIFY' | 'ARTICLE_NOTIFY' | 'SIGNUP_VERIFY' | 'PASSWORD_RESET' | 'MANUAL'
+
+export interface EmailBatch {
+  id: string
+  kind: EmailKind
+  target?: EmailTarget | null
+  eventId?: string | null
+  eventTitle?: string | null
+  subject: string
+  recipientCount: number
+  successCount: number
+  failureCount: number
+  status: 'PENDING' | 'SENDING' | 'COMPLETED' | 'COMPLETED_WITH_ERRORS'
+  sentByName?: string | null
+  createdAt: string
+  completedAt?: string | null
+}
+
+export interface EmailLog {
+  id: string
+  toEmail: string
+  toName?: string | null
+  status: 'PENDING' | 'SENT' | 'FAILED'
+  errorMessage?: string | null
+  sentAt?: string | null
+}
+
 // ── Common ─────────────────────────────────────────────
 export interface PagedResult<T> {
   items: T[]

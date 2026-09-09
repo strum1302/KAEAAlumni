@@ -226,3 +226,35 @@ public record ChangePasswordDto(
     string CurrentPassword,
     string NewPassword
 );
+
+// ── 메일 발송 이력 (Email) ──────────────────────────────
+public record SendEventNotifyDto(
+    string Target,   // ALL | RSVP | NOT_RSVP
+    string Subject,
+    string Body
+);
+
+public record EmailBatchDto(
+    Guid Id,
+    string Kind,
+    string? Target,
+    Guid? EventId,
+    string? EventTitle,
+    string Subject,
+    int RecipientCount,
+    int SuccessCount,
+    int FailureCount,
+    string Status,
+    string? SentByName,
+    DateTime CreatedAt,
+    DateTime? CompletedAt
+);
+
+public record EmailLogDto(
+    Guid Id,
+    string ToEmail,
+    string? ToName,
+    string Status,
+    string? ErrorMessage,
+    DateTime? SentAt
+);

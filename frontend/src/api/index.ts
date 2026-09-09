@@ -77,6 +77,8 @@ export const eventsApi = {
     guestName: string; email: string; cellPhone: string
     graduationInfo: string; additionalGuests: number; note?: string
   }) => api.post(`/events/${id}/rsvps`, data),
+  notify: (id: string, data: { target: string; subject: string; body: string }) =>
+    api.post(`/events/${id}/notify`, data),
 }
 
 // ── Articles API ──────────────────────────────────
@@ -120,6 +122,15 @@ export const paymentsApi = {
   create: (data: object) => api.post('/payments', data),
   update: (id: string, data: object) => api.put(`/payments/${id}`, data),
   remove: (id: string) => api.delete(`/payments/${id}`),
+}
+
+// ── Email API (발송 이력) ──────────────────────────────
+export const emailApi = {
+  getBatches: (params?: { kind?: string; page?: number; pageSize?: number }) =>
+    api.get('/email/batches', { params }),
+  getSummary: () => api.get('/email/summary'),
+  getBatchLogs: (id: string) => api.get(`/email/batches/${id}/logs`),
+  retryFailed: (id: string) => api.post(`/email/batches/${id}/retry-failed`),
 }
 
 export default api

@@ -63,3 +63,40 @@ public enum RsvpPaymentStatus
     PENDING = 0,
     COMPLETED = 1
 }
+
+// ── 메일 발송 이력 (email_batches.kind) ──────────────────
+// 지금은 EVENT_NOTIFY(행사 공지)만 실제로 발송되지만, 추후 게시글 알림/가입 인증/
+// 비밀번호 재설정 등도 같은 이력 구조를 그대로 쓸 수 있도록 종류를 미리 넉넉히 둠.
+public enum EmailKind
+{
+    EVENT_NOTIFY = 0,
+    ARTICLE_NOTIFY = 1,
+    SIGNUP_VERIFY = 2,
+    PASSWORD_RESET = 3,
+    MANUAL = 4
+}
+
+// ── 행사 공지 메일 발송 대상 (email_batches.target) ──────
+public enum EmailTarget
+{
+    ALL = 0,       // 전체 회원
+    RSVP = 1,      // 해당 행사 신청자만 (회원+게스트)
+    NOT_RSVP = 2   // 해당 행사 미신청 회원만
+}
+
+// ── email_batches.status ─────────────────────────────────
+public enum EmailBatchStatus
+{
+    PENDING = 0,
+    SENDING = 1,
+    COMPLETED = 2,
+    COMPLETED_WITH_ERRORS = 3
+}
+
+// ── email_logs.status ─────────────────────────────────────
+public enum EmailLogStatus
+{
+    PENDING = 0,
+    SENT = 1,
+    FAILED = 2
+}
