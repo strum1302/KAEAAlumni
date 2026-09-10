@@ -48,7 +48,7 @@ export default function HomePage() {
   return (
     <div className="space-y-12">
       {/* 히어로 배너 - 캠퍼스 사진 슬라이드쇼 */}
-      <CampusHero images={HERO_IMAGES} className="rounded-2xl">
+      <CampusHero images={HERO_IMAGES}>
         <p className="text-crimson-50/90 text-sm tracking-wide">KU CHICAGO — MIDWEST ALUMNI ASSOCIATION</p>
         <h1 className="text-2xl md:text-4xl font-bold leading-snug">
           자유·정의·진리, 시카고에 울려 퍼지는 호랑이의 기상
