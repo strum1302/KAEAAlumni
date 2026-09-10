@@ -1,14 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { format } from 'date-fns'
 import { eventsApi, articlesApi, galleryApi } from '../api'
 import { getYouTubeEmbedUrl, getYouTubeThumbnail } from '../utils/youtube'
 import { getGoogleMapsLink } from '../utils/maps'
+import CampusHero from '../components/CampusHero'
 import type { EventList, ArticleList, GalleryItem, PagedResult } from '../types'
 
-// 히어로 배경 슬라이드쇼용 캠퍼스 사진들 (public/images/hero/hero-01.jpg ~ hero-27.jpg)
-const HERO_IMAGES = Array.from({ length: 27 }, (_, i) => `/images/hero/hero-${String(i + 1).padStart(2, '0')}.jpg`)
+// 히어로에 쓸 캠퍼스 사진 9장 (사계절 + 응원전 분위기가 고루 섞이도록 27장 중 선별).
+// 나머지 사진들은 public/images/hero/에 그대로 남아있으니, 나중에 갤러리 "고려대 캠퍼스"
+// 항목으로 옮기고 싶으면 그쪽에서 재사용할 수 있습니다.
+const HERO_IMAGES = [1, 2, 3, 4, 7, 9, 12, 22, 26].map(
+  (n) => `/images/hero/hero-${String(n).padStart(2, '0')}.jpg`
+)
 
 export default function HomePage() {
   const [selectedMedia, setSelectedMedia] = useState<GalleryItem | null>(null)
@@ -43,25 +48,21 @@ export default function HomePage() {
   return (
     <div className="space-y-12">
       {/* 히어로 배너 - 캠퍼스 사진 슬라이드쇼 */}
-      <section className="relative bg-crimson-900 text-white rounded-2xl overflow-hidden">
-        <HeroSlideshow images={HERO_IMAGES} />
-        <div className="absolute inset-0 bg-gradient-to-br from-crimson-900/85 to-crimson/75" />
-        <div className="relative px-6 py-16 md:py-20 text-center space-y-4">
-          <p className="text-crimson-50/90 text-sm tracking-wide">KU CHICAGO — MIDWEST ALUMNI ASSOCIATION</p>
-          <h1 className="text-2xl md:text-4xl font-bold leading-snug">
-            자유·정의·진리, 시카고에 울려 퍼지는 호랑이의 기상
-          </h1>
-          <p className="text-crimson-50/90">1950년대부터 이어져 온 일리노이 및 미중서부 고대인의 네트워크</p>
-          <div className="flex flex-wrap justify-center gap-3 pt-2">
-            <Link to="/events" className="bg-white text-crimson font-semibold px-5 py-2.5 rounded-lg hover:bg-crimson-50 transition-colors">
-              다가오는 행사 보기
-            </Link>
-            <Link to="/join" className="border border-white/70 font-semibold px-5 py-2.5 rounded-lg hover:bg-white/10 transition-colors">
-              신입 교우 등록
-            </Link>
-          </div>
+      <CampusHero images={HERO_IMAGES} className="rounded-2xl">
+        <p className="text-crimson-50/90 text-sm tracking-wide">KU CHICAGO — MIDWEST ALUMNI ASSOCIATION</p>
+        <h1 className="text-2xl md:text-4xl font-bold leading-snug">
+          자유·정의·진리, 시카고에 울려 퍼지는 호랑이의 기상
+        </h1>
+        <p className="text-crimson-50/90">1950년대부터 이어져 온 일리노이 및 미중서부 고대인의 네트워크</p>
+        <div className="flex flex-wrap justify-center gap-3 pt-2">
+          <Link to="/events" className="bg-white text-crimson font-semibold px-5 py-2.5 rounded-lg hover:bg-crimson-50 transition-colors">
+            다가오는 행사 보기
+          </Link>
+          <Link to="/join" className="border border-white/70 font-semibold px-5 py-2.5 rounded-lg hover:bg-white/10 transition-colors">
+            신입 교우 등록
+          </Link>
         </div>
-      </section>
+      </CampusHero>
 
       {/* 다가오는 주요 행사 */}
       <section>
@@ -173,53 +174,6 @@ export default function HomePage() {
           </ul>
         </div>
       </section>
-    </div>
-  )
-}
-
-// 히어로 배경 슬라이드쇼. 매 5초마다 다음 사진으로 크로스페이드 전환하며,
-// 한 번에 최대 2장(현재 + 페이드아웃 중인 이전 사진)만 화면에 그려서
-// 27장을 한꺼번에 로드하지 않도록 합니다. 다음 사진은 미리 불러와 전환이 끊기지 않게 합니다.
-function HeroSlideshow({ images }: { images: string[] }) {
-  const [index, setIndex] = useState(0)
-  const [prevIndex, setPrevIndex] = useState<number | null>(null)
-  const [fading, setFading] = useState(false)
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setIndex((i) => {
-        setPrevIndex(i)
-        setFading(false)
-        return (i + 1) % images.length
-      })
-    }, 5000)
-    return () => clearInterval(timer)
-  }, [images.length])
-
-  useEffect(() => {
-    if (prevIndex === null) return
-    const raf = requestAnimationFrame(() => setFading(true))
-    const timeout = setTimeout(() => setPrevIndex(null), 1600)
-    return () => { cancelAnimationFrame(raf); clearTimeout(timeout) }
-  }, [prevIndex])
-
-  useEffect(() => {
-    const next = new Image()
-    next.src = images[(index + 1) % images.length]
-  }, [index, images])
-
-  return (
-    <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-      <img src={images[index]} alt="" className="absolute inset-0 w-full h-full object-cover" />
-      {prevIndex !== null && (
-        <img
-          src={images[prevIndex]}
-          alt=""
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[1500ms] ease-in-out ${
-            fading ? 'opacity-0' : 'opacity-100'
-          }`}
-        />
-      )}
     </div>
   )
 }
