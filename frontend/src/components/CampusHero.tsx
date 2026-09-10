@@ -160,7 +160,7 @@ export default function CampusHero({
   if (!normalized.length) {
     return (
       <section className={`relative overflow-hidden bg-crimson text-white ${className}`}>
-        <div className="absolute inset-0 bg-gradient-to-br from-crimson-900/80 to-crimson/70" />
+        <div className="absolute inset-0 bg-gradient-to-br from-black/70 to-black/40" />
         <div className="relative flex flex-col items-center justify-center text-center px-6 py-16 md:py-20 space-y-4">
           {children}
         </div>
@@ -185,7 +185,7 @@ export default function CampusHero({
           <HeroTile images={normalized} intervalMs={intervalMs} delayMs={0} paused={paused} />
         )}
       </div>
-      <div className="absolute inset-0 bg-gradient-to-br from-crimson-900/85 to-crimson/75" />
+      <div className="absolute inset-0 bg-gradient-to-br from-black/70 to-black/40" />
       <div className="relative flex flex-col items-center justify-center text-center h-full px-6 py-16 md:py-20 space-y-4">
         {children}
       </div>
