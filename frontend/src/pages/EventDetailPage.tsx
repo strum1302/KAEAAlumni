@@ -185,24 +185,42 @@ function RsvpModal({ eventId, member, onClose, onSubmitted }: {
           </button>
         </div>
         <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input required placeholder="성명" value={rsvp.guestName}
-            onChange={(e) => setRsvp({ ...rsvp, guestName: e.target.value })}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-          <input required type="email" placeholder="이메일" value={rsvp.email}
-            onChange={(e) => setRsvp({ ...rsvp, email: e.target.value })}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-          <input required placeholder="휴대전화" value={rsvp.cellPhone}
-            onChange={(e) => setRsvp({ ...rsvp, cellPhone: e.target.value })}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-          <input required placeholder="학번/과 (예: 83 전산학과)" value={rsvp.graduationInfo}
-            onChange={(e) => setRsvp({ ...rsvp, graduationInfo: e.target.value })}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-          <input type="number" min={0} placeholder="동반인원" value={rsvp.additionalGuests}
-            onChange={(e) => setRsvp({ ...rsvp, additionalGuests: e.target.value })}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-          <input placeholder="메모 (선택)" value={rsvp.note}
-            onChange={(e) => setRsvp({ ...rsvp, note: e.target.value })}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">성명</label>
+            <input required placeholder="성명" value={rsvp.guestName}
+              onChange={(e) => setRsvp({ ...rsvp, guestName: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">이메일</label>
+            <input required type="email" placeholder="이메일" value={rsvp.email}
+              onChange={(e) => setRsvp({ ...rsvp, email: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">휴대전화</label>
+            <input required placeholder="휴대전화" value={rsvp.cellPhone}
+              onChange={(e) => setRsvp({ ...rsvp, cellPhone: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">학번/과</label>
+            <input required placeholder="예: 83 전산학과" value={rsvp.graduationInfo}
+              onChange={(e) => setRsvp({ ...rsvp, graduationInfo: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">동반인원</label>
+            <input type="number" min={0} placeholder="동반인원" value={rsvp.additionalGuests}
+              onChange={(e) => setRsvp({ ...rsvp, additionalGuests: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm text-gray-600 mb-1">메모 (선택)</label>
+            <textarea rows={4} placeholder="메모 (선택)" value={rsvp.note}
+              onChange={(e) => setRsvp({ ...rsvp, note: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-y" />
+          </div>
           <button type="submit" disabled={submitting}
             className="md:col-span-2 bg-crimson text-white font-medium py-2.5 rounded-lg hover:bg-crimson-800 transition-colors disabled:opacity-60">
             {submitting ? '제출 중...' : '참가 신청서 제출'}
