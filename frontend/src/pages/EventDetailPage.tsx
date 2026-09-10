@@ -24,11 +24,6 @@ export default function EventDetailPage() {
   const [showRsvp, setShowRsvp] = useState(false)
   const [showNotify, setShowNotify] = useState(false)
   const [selectedPhoto, setSelectedPhoto] = useState<GalleryItem | null>(null)
-  const [rsvp, setRsvp] = useState({
-    guestName: member?.name || '', email: member?.email || '', cellPhone: member?.cellPhone || '',
-    // 로그인한 회원은 학번/과를 프로필에서 자동으로 채워줍니다 (비로그인 게스트는 직접 입력).
-    graduationInfo: member ? `${member.entryYear} ${member.major}` : '', additionalGuests: '0', note: '',
-  })
 
   const canManage = member?.role === 'OFFICER' || member?.role === 'ADMIN'
 
@@ -43,18 +38,6 @@ export default function EventDetailPage() {
     queryFn: async () => (await galleryApi.getList({ eventId: id, mediaType: tab, pageSize: 50 })).data as PagedResult<GalleryItem>,
     enabled: !!id,
   })
-
-  const submitRsvp = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      await eventsApi.createRsvp(id!, { ...rsvp, additionalGuests: Number(rsvp.additionalGuests) })
-      toast.success('참가 신청이 완료되었습니다.')
-      setShowRsvp(false)
-      queryClient.invalidateQueries({ queryKey: ['event', id] })
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || '참가 신청에 실패했습니다.')
-    }
-  }
 
   if (!event) return <p className="text-sm text-gray-400">불러오는 중...</p>
 
@@ -84,14 +67,12 @@ export default function EventDetailPage() {
         </div>
       </div>
 
-      {/* 온라인 참가신청 버튼 / RSVP 폼 - 버튼을 눌러야 신청서가 열립니다 */}
+      {/* 온라인 참가신청 버튼 - 버튼을 눌러야 신청서 모달이 열립니다 */}
       <div className="flex flex-wrap gap-2">
-        {!showRsvp && (
-          <button onClick={() => setShowRsvp(true)}
-            className="bg-crimson text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-crimson-800 transition-colors">
-            온라인 참가신청
-          </button>
-        )}
+        <button onClick={() => setShowRsvp(true)}
+          className="bg-crimson text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-crimson-800 transition-colors">
+          온라인 참가신청
+        </button>
         {canManage && (
           <button onClick={() => setShowNotify(true)}
             className="border border-crimson text-crimson font-semibold px-5 py-2.5 rounded-lg hover:bg-crimson-50 transition-colors">
@@ -99,41 +80,6 @@ export default function EventDetailPage() {
           </button>
         )}
       </div>
-
-      {showRsvp && (
-        <div className="bg-white border border-gray-100 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-bold text-crimson">온라인 참가 신청 (RSVP)</h2>
-            <button type="button" onClick={() => setShowRsvp(false)} className="text-sm text-gray-400 hover:text-gray-600">
-              닫기
-            </button>
-          </div>
-          <form onSubmit={submitRsvp} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input required placeholder="성명" value={rsvp.guestName}
-              onChange={(e) => setRsvp({ ...rsvp, guestName: e.target.value })}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-            <input required type="email" placeholder="이메일" value={rsvp.email}
-              onChange={(e) => setRsvp({ ...rsvp, email: e.target.value })}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-            <input required placeholder="휴대전화" value={rsvp.cellPhone}
-              onChange={(e) => setRsvp({ ...rsvp, cellPhone: e.target.value })}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-            <input required placeholder="학번/과 (예: 83 전산학과)" value={rsvp.graduationInfo}
-              onChange={(e) => setRsvp({ ...rsvp, graduationInfo: e.target.value })}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-            <input type="number" min={0} placeholder="동반인원" value={rsvp.additionalGuests}
-              onChange={(e) => setRsvp({ ...rsvp, additionalGuests: e.target.value })}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-            <input placeholder="메모 (선택)" value={rsvp.note}
-              onChange={(e) => setRsvp({ ...rsvp, note: e.target.value })}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-            <button type="submit"
-              className="md:col-span-2 bg-crimson text-white font-medium py-2.5 rounded-lg hover:bg-crimson-800 transition-colors">
-              참가 신청서 제출
-            </button>
-          </form>
-        </div>
-      )}
 
       {/* 하부 미디어 갤러리 */}
       <div>
@@ -188,9 +134,81 @@ export default function EventDetailPage() {
         }} />
       )}
 
+      {showRsvp && (
+        <RsvpModal eventId={id!} member={member} onClose={() => setShowRsvp(false)}
+          onSubmitted={() => queryClient.invalidateQueries({ queryKey: ['event', id] })} />
+      )}
+
       {showNotify && (
         <NotifyModal eventId={id!} onClose={() => setShowNotify(false)} />
       )}
+    </div>
+  )
+}
+
+// 참가 신청(RSVP) 모달. 로그인한 회원은 이름/이메일/휴대전화/학번·전공을 프로필에서 자동으로
+// 채워주고, 비로그인 게스트는 직접 입력한다.
+function RsvpModal({ eventId, member, onClose, onSubmitted }: {
+  eventId: string
+  member: { name: string; email: string; cellPhone: string; entryYear: number; major: string } | null
+  onClose: () => void
+  onSubmitted: () => void
+}) {
+  const [rsvp, setRsvp] = useState({
+    guestName: member?.name || '', email: member?.email || '', cellPhone: member?.cellPhone || '',
+    graduationInfo: member ? `${member.entryYear} ${member.major}` : '', additionalGuests: '0', note: '',
+  })
+  const [submitting, setSubmitting] = useState(false)
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSubmitting(true)
+    try {
+      await eventsApi.createRsvp(eventId, { ...rsvp, additionalGuests: Number(rsvp.additionalGuests) })
+      toast.success('참가 신청이 완료되었습니다.')
+      onSubmitted()
+      onClose()
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || '참가 신청에 실패했습니다.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-lg space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold text-gray-800">온라인 참가 신청 (RSVP)</h3>
+          <button type="button" onClick={onClose} className="text-sm text-gray-400 hover:text-gray-600">
+            닫기
+          </button>
+        </div>
+        <form onSubmit={submit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input required placeholder="성명" value={rsvp.guestName}
+            onChange={(e) => setRsvp({ ...rsvp, guestName: e.target.value })}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          <input required type="email" placeholder="이메일" value={rsvp.email}
+            onChange={(e) => setRsvp({ ...rsvp, email: e.target.value })}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          <input required placeholder="휴대전화" value={rsvp.cellPhone}
+            onChange={(e) => setRsvp({ ...rsvp, cellPhone: e.target.value })}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          <input required placeholder="학번/과 (예: 83 전산학과)" value={rsvp.graduationInfo}
+            onChange={(e) => setRsvp({ ...rsvp, graduationInfo: e.target.value })}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          <input type="number" min={0} placeholder="동반인원" value={rsvp.additionalGuests}
+            onChange={(e) => setRsvp({ ...rsvp, additionalGuests: e.target.value })}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          <input placeholder="메모 (선택)" value={rsvp.note}
+            onChange={(e) => setRsvp({ ...rsvp, note: e.target.value })}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          <button type="submit" disabled={submitting}
+            className="md:col-span-2 bg-crimson text-white font-medium py-2.5 rounded-lg hover:bg-crimson-800 transition-colors disabled:opacity-60">
+            {submitting ? '제출 중...' : '참가 신청서 제출'}
+          </button>
+        </form>
+      </div>
     </div>
   )
 }
