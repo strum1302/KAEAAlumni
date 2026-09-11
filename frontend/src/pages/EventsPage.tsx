@@ -20,17 +20,24 @@ export default function EventsPage() {
   const [showAdd, setShowAdd] = useState(false)
   const [editing, setEditing] = useState<EventDetail | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [lightboxPhoto, setLightboxPhoto] = useState<GalleryItem | null>(null)
+  // 라이트박스: 해당 행사의 사진 전체 목록 + 현재 보고 있는 인덱스
+  const [lightbox, setLightbox] = useState<{ photos: GalleryItem[]; index: number } | null>(null)
 
-  // 라이트박스가 열려 있을 때 ESC 키로도 닫을 수 있게 처리
+  const openLightbox = (photos: GalleryItem[], index: number) => setLightbox({ photos, index })
+  const showPrev = () => setLightbox((l) => l && ({ ...l, index: (l.index - 1 + l.photos.length) % l.photos.length }))
+  const showNext = () => setLightbox((l) => l && ({ ...l, index: (l.index + 1) % l.photos.length }))
+
+  // 라이트박스가 열려 있을 때 ESC로 닫고, 좌우 화살표 키로도 슬라이드할 수 있게 처리
   useEffect(() => {
-    if (!lightboxPhoto) return
+    if (!lightbox) return
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setLightboxPhoto(null)
+      if (e.key === 'Escape') setLightbox(null)
+      if (e.key === 'ArrowLeft') showPrev()
+      if (e.key === 'ArrowRight') showNext()
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [lightboxPhoto])
+  }, [lightbox])
 
   const { data: years } = useQuery({
     queryKey: ['events', 'years'],
@@ -102,7 +109,7 @@ export default function EventsPage() {
             deletingId={deletingId}
             onEdit={openEdit}
             onDelete={handleDelete}
-            onOpenLightbox={setLightboxPhoto}
+            onOpenLightbox={openLightbox}
           />
         ))}
         {!data?.items.length && <p className="text-sm text-gray-400">등록된 행사가 없습니다.</p>}
@@ -110,25 +117,50 @@ export default function EventsPage() {
 
       <Pagination page={page} totalPages={data?.totalPages ?? 1} onChange={setPage} />
 
-      {/* 썸네일 클릭 시 확대해서 보여주는 라이트박스 */}
-      {lightboxPhoto && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4" onClick={() => setLightboxPhoto(null)}>
-          <div className="max-w-5xl w-full" onClick={(e) => e.stopPropagation()}>
-            <div className="relative inline-block max-w-full mx-auto">
-              <img src={lightboxPhoto.mediaUrl} alt={lightboxPhoto.title}
-                className="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-xl block" />
-              <button
-                onClick={() => setLightboxPhoto(null)}
-                aria-label="닫기"
-                className="absolute top-2 right-2 w-9 h-9 flex items-center justify-center rounded-full bg-black/50 text-white text-xl leading-none hover:bg-black/70"
-              >
-                &times;
-              </button>
+      {/* 썸네일 클릭 시 확대해서 보여주는 라이트박스. 사진이 여러 장이면 좌우 화살표로 슬라이드 */}
+      {lightbox && (() => {
+        const photo = lightbox.photos[lightbox.index]
+        const hasMultiple = lightbox.photos.length > 1
+        return (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4" onClick={() => setLightbox(null)}>
+            <div className="max-w-5xl w-full" onClick={(e) => e.stopPropagation()}>
+              <div className="relative inline-block max-w-full mx-auto">
+                <img src={photo.mediaUrl} alt={photo.title}
+                  className="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-xl block" />
+                <button
+                  onClick={() => setLightbox(null)}
+                  aria-label="닫기"
+                  className="absolute top-2 right-2 w-9 h-9 flex items-center justify-center rounded-full bg-black/50 text-white text-xl leading-none hover:bg-black/70"
+                >
+                  &times;
+                </button>
+                {hasMultiple && (
+                  <>
+                    <button
+                      onClick={showPrev}
+                      aria-label="이전 사진"
+                      className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full bg-black/50 text-white text-2xl leading-none hover:bg-black/70"
+                    >
+                      &lsaquo;
+                    </button>
+                    <button
+                      onClick={showNext}
+                      aria-label="다음 사진"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full bg-black/50 text-white text-2xl leading-none hover:bg-black/70"
+                    >
+                      &rsaquo;
+                    </button>
+                  </>
+                )}
+              </div>
+              <p className="text-white text-center mt-3">{photo.title}</p>
+              {hasMultiple && (
+                <p className="text-gray-300 text-xs text-center mt-1">{lightbox.index + 1} / {lightbox.photos.length}</p>
+              )}
             </div>
-            <p className="text-white text-center mt-3">{lightboxPhoto.title}</p>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {showAdd && (
         <AddEventModal
@@ -161,16 +193,18 @@ function EventCard({
   deletingId: string | null
   onEdit: (ev: EventList) => void
   onDelete: (ev: EventList) => void
-  onOpenLightbox: (item: GalleryItem) => void
+  onOpenLightbox: (photos: GalleryItem[], index: number) => void
 }) {
   const navigate = useNavigate()
   const isPast = new Date(ev.eventDate) < new Date()
 
+  // 썸네일뿐 아니라 라이트박스에서 화살표로 넘겨볼 수 있도록 해당 행사의 사진 전체를 받아온다
   const { data: thumbs } = useQuery({
     queryKey: ['gallery', 'event-thumb', ev.id],
-    queryFn: async () => (await galleryApi.getList({ eventId: ev.id, mediaType: 'PHOTO', pageSize: 1 })).data as PagedResult<GalleryItem>,
+    queryFn: async () => (await galleryApi.getList({ eventId: ev.id, mediaType: 'PHOTO', pageSize: 50 })).data as PagedResult<GalleryItem>,
   })
-  const thumb = thumbs?.items[0]
+  const photos = thumbs?.items ?? []
+  const thumb = photos[0]
 
   return (
     <div className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow">
@@ -207,10 +241,15 @@ function EventCard({
         {thumb && (
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onOpenLightbox(thumb) }}
-            className="shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-gray-100 self-start"
+            onClick={(e) => { e.stopPropagation(); onOpenLightbox(photos, 0) }}
+            className="shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-gray-100 self-start relative"
           >
             <img src={thumb.mediaUrl} alt={ev.title} className="w-full h-full object-cover hover:opacity-90 transition-opacity" />
+            {photos.length > 1 && (
+              <span className="absolute bottom-0.5 right-0.5 text-[10px] leading-none bg-black/60 text-white px-1 py-0.5 rounded">
+                +{photos.length - 1}
+              </span>
+            )}
           </button>
         )}
       </div>
