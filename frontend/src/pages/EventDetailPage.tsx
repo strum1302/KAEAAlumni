@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
@@ -43,6 +43,10 @@ export default function EventDetailPage() {
 
   return (
     <div className="space-y-8">
+      <Link to="/events" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-crimson">
+        &larr; 목록으로
+      </Link>
+
       {/* 행사 헤더 */}
       <div>
         <h1 className="text-2xl font-bold text-gray-800 mb-1">{event.title}</h1>
