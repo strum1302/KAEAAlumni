@@ -103,16 +103,15 @@ export default function GalleryPage() {
       </div>
 
       <div className="flex items-center justify-between gap-2 mb-6 flex-wrap">
-        <div className="flex gap-2">
-          {(['ALL', 'PHOTO', 'VIDEO'] as const).map((f) => (
-            <button key={f} onClick={() => setFilter(f)}
-              className={`px-4 py-1.5 text-sm rounded-full font-medium ${
-                filter === f ? 'bg-crimson text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}>
-              {f === 'ALL' ? '전체보기' : f === 'PHOTO' ? '사진만 보기' : '영상만 보기'}
-            </button>
-          ))}
-        </div>
+        <select
+          value={filter}
+          onChange={(e) => setFilter(e.target.value as 'ALL' | 'PHOTO' | 'VIDEO')}
+          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+        >
+          <option value="ALL">전체보기</option>
+          <option value="PHOTO">사진만 보기</option>
+          <option value="VIDEO">영상만 보기</option>
+        </select>
         <select
           value={year ?? ''}
           onChange={(e) => setYear(e.target.value ? Number(e.target.value) : null)}
