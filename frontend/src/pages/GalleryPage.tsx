@@ -169,22 +169,33 @@ export default function GalleryPage() {
 
       {selected && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4" onClick={() => setSelected(null)}>
-          <button
-            onClick={() => setSelected(null)}
-            aria-label="닫기"
-            className="fixed top-4 right-4 z-[60] w-10 h-10 flex items-center justify-center rounded-full bg-white/10 text-white text-2xl leading-none hover:bg-white/20"
-          >
-            &times;
-          </button>
           <div className="max-w-5xl w-full" onClick={(e) => e.stopPropagation()}>
             {selected.mediaType === 'PHOTO' ? (
-              <img src={selected.mediaUrl} alt={selected.title} className="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-xl mx-auto" />
+              <div className="relative inline-block max-w-full mx-auto">
+                <img src={selected.mediaUrl} alt={selected.title} className="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-xl block" />
+                <button
+                  onClick={() => setSelected(null)}
+                  aria-label="닫기"
+                  className="absolute top-2 right-2 w-9 h-9 flex items-center justify-center rounded-full bg-black/50 text-white text-xl leading-none hover:bg-black/70"
+                >
+                  &times;
+                </button>
+              </div>
             ) : (
-              <iframe
-                className="w-full aspect-video rounded-xl"
-                src={getYouTubeEmbedUrl(selected.mediaUrl)}
-                allowFullScreen
-              />
+              <div className="relative">
+                <iframe
+                  className="w-full aspect-video rounded-xl"
+                  src={getYouTubeEmbedUrl(selected.mediaUrl)}
+                  allowFullScreen
+                />
+                <button
+                  onClick={() => setSelected(null)}
+                  aria-label="닫기"
+                  className="absolute -top-11 right-0 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 text-white text-xl leading-none hover:bg-white/20"
+                >
+                  &times;
+                </button>
+              </div>
             )}
             <p className="text-white text-center mt-3">{mediaLabel(selected)}</p>
             {selected.description && (
