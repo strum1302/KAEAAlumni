@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { articlesApi, membersApi, galleryApi } from '../api'
 import { useAuthStore } from '../store/authStore'
-import { getYouTubeEmbedUrl, getYouTubeThumbnail } from '../utils/youtube'
+import { getVideoEmbedUrl, getVideoThumbnail } from '../utils/youtube'
 import type { ArticleDetail, ArticleList, GalleryItem, Officer, PagedResult } from '../types'
 
 const HISTORY_TITLE = '교우회 연혁'
@@ -204,7 +204,7 @@ export default function AboutPage() {
         {archiveVideos?.items.length ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {archiveVideos.items.map((v) => {
-              const thumb = v.thumbnailUrl || getYouTubeThumbnail(v.mediaUrl)
+              const thumb = v.thumbnailUrl || getVideoThumbnail(v.mediaUrl)
               return (
                 <button key={v.id} onClick={() => setSelectedVideo(v)} className="text-left group">
                   <div className="rounded-xl overflow-hidden bg-gray-100 aspect-video relative">
@@ -237,7 +237,7 @@ export default function AboutPage() {
           <div className="max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
             <iframe
               className="w-full aspect-video rounded-xl"
-              src={getYouTubeEmbedUrl(selectedVideo.mediaUrl)}
+              src={getVideoEmbedUrl(selectedVideo.mediaUrl)}
               allowFullScreen
             />
             <p className="text-white text-center mt-3">{selectedVideo.title}</p>

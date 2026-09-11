@@ -8,12 +8,8 @@ import { eventsApi, galleryApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import { getGoogleMapsLink } from '../utils/maps'
 import { fileToResizedDataUrl } from '../utils/image'
+import { getYouTubeVideoId, getVideoEmbedUrl } from '../utils/youtube'
 import type { EventDetail, GalleryItem, PagedResult } from '../types'
-
-function extractYouTubeId(url: string) {
-  const match = url.match(/(?:youtu\.be\/|v=)([\w-]{11})/)
-  return match ? match[1] : url
-}
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -38,6 +34,20 @@ export default function EventDetailPage() {
     queryFn: async () => (await galleryApi.getList({ eventId: id, mediaType: tab, pageSize: 50 })).data as PagedResult<GalleryItem>,
     enabled: !!id,
   })
+
+  // 목록은 사진마다 축소 썸네일로 채워져 있을 수 있어(초기 로딩 속도를 위해), 실제로 눌러서
+  // 크게 볼 때는 원본 화질을 따로 받아온다.
+  const openPhoto = async (item: GalleryItem) => {
+    setSelectedPhoto(item)
+    if (item.mediaType !== 'PHOTO' || !item.thumbnailUrl) return
+    try {
+      const res = await galleryApi.getById(item.id)
+      const full = res.data as GalleryItem
+      setSelectedPhoto((prev) => (prev && prev.id === item.id ? { ...prev, mediaUrl: full.mediaUrl } : prev))
+    } catch {
+      // 무시 — 실패해도 이미 축소본이 떠 있으니 화면 자체는 문제없다.
+    }
+  }
 
   if (!event) return <p className="text-sm text-gray-400">불러오는 중...</p>
 
@@ -102,11 +112,14 @@ export default function EventDetailPage() {
           {gallery?.items.map((item) => (
             <div key={item.id} className="rounded-xl overflow-hidden bg-gray-100">
               {item.mediaType === 'PHOTO' ? (
-                <button type="button" onClick={() => setSelectedPhoto(item)} className="block w-full">
-                  <img src={item.mediaUrl} alt={item.title} className="w-full aspect-video object-cover hover:opacity-90 transition-opacity" />
+                <button type="button" onClick={() => openPhoto(item)} className="block w-full">
+                  <img src={item.mediaUrl} alt={item.title} loading="lazy" className="w-full aspect-video object-cover hover:opacity-90 transition-opacity" />
                 </button>
+              ) : getYouTubeVideoId(item.mediaUrl) ? (
+                <YouTube videoId={getYouTubeVideoId(item.mediaUrl)!} opts={{ width: '100%' }} className="w-full aspect-video" />
               ) : (
-                <YouTube videoId={extractYouTubeId(item.mediaUrl)} opts={{ width: '100%' }} className="w-full aspect-video" />
+                // YouTube가 아니면(Google Drive 공유 링크 등) 일반 iframe으로 재생한다.
+                <iframe className="w-full aspect-video" src={getVideoEmbedUrl(item.mediaUrl)} allowFullScreen />
               )}
               <p className="text-xs text-gray-600 px-2 py-1.5 truncate">{item.title}</p>
             </div>
@@ -302,15 +315,20 @@ function TabButton({ active, onClick, label }: { active: boolean; onClick: () =>
 }
 
 function AddMediaModal({ eventId, onClose, onCreated }: { eventId: string; onClose: () => void; onCreated: () => void }) {
-  const [form, setForm] = useState({ title: '', mediaType: 'PHOTO', mediaUrl: '', description: '' })
+  const [form, setForm] = useState({ title: '', mediaType: 'PHOTO', mediaUrl: '', thumbnailUrl: '', description: '' })
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
 
   const handlePhotoFile = async (file: File) => {
     setUploading(true)
     try {
-      const dataUrl = await fileToResizedDataUrl(file, 1200, 1200, 0.8)
-      setForm((f) => ({ ...f, mediaUrl: dataUrl }))
+      // 원본과 별도로 작은 썸네일도 함께 만들어 둔다 — 행사 상세 페이지의 사진 목록이나
+      // 행사 목록 카드 썸네일이 이걸 대신 받아서 초기 로딩이 느려지지 않게 하기 위함.
+      const [dataUrl, thumbUrl] = await Promise.all([
+        fileToResizedDataUrl(file, 1200, 1200, 0.8),
+        fileToResizedDataUrl(file, 360, 360, 0.55),
+      ])
+      setForm((f) => ({ ...f, mediaUrl: dataUrl, thumbnailUrl: thumbUrl }))
     } catch (err: any) {
       toast.error(err?.message || '이미지를 처리하지 못했습니다.')
     } finally {
@@ -321,7 +339,7 @@ function AddMediaModal({ eventId, onClose, onCreated }: { eventId: string; onClo
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.mediaUrl) {
-      toast.error(form.mediaType === 'PHOTO' ? '사진을 선택해주세요.' : 'YouTube 링크를 입력해주세요.')
+      toast.error(form.mediaType === 'PHOTO' ? '사진을 선택해주세요.' : 'YouTube 또는 Google Drive 링크를 입력해주세요.')
       return
     }
     setSaving(true)
@@ -343,10 +361,10 @@ function AddMediaModal({ eventId, onClose, onCreated }: { eventId: string; onClo
         <h3 className="font-bold text-gray-800">현장 사진/영상 추가 등록</h3>
         <form onSubmit={submit} className="space-y-3">
           <select value={form.mediaType}
-            onChange={(e) => setForm({ ...form, mediaType: e.target.value, mediaUrl: '' })}
+            onChange={(e) => setForm({ ...form, mediaType: e.target.value, mediaUrl: '', thumbnailUrl: '' })}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
             <option value="PHOTO">사진</option>
-            <option value="VIDEO">영상 (YouTube)</option>
+            <option value="VIDEO">영상 (YouTube / Google Drive)</option>
           </select>
           <input required placeholder="제목" value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -368,7 +386,7 @@ function AddMediaModal({ eventId, onClose, onCreated }: { eventId: string; onClo
               )}
             </div>
           ) : (
-            <input required placeholder="YouTube URL" value={form.mediaUrl}
+            <input required placeholder="YouTube 또는 Google Drive 링크" value={form.mediaUrl}
               onChange={(e) => setForm({ ...form, mediaUrl: e.target.value })}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
           )}

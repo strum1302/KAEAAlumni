@@ -3,6 +3,7 @@ using KAEAAlumni.API.Middleware;
 using KAEAAlumni.Application.Interfaces;
 using KAEAAlumni.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -128,6 +129,15 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
 
+// ── 응답 압축 ─────────────────────────────────────
+// 사진/영상이 base64로 JSON 응답에 그대로 실려서 응답 크기가 큰 편이라(갤러리 목록 등),
+// gzip 압축을 켜서 브라우저까지 전달되는 바이트 수를 줄인다. HTTPS에서도 압축되도록 명시.
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/json" });
+});
+
 var app = builder.Build();
 
 // ── Auto Migration ────────────────────────────────
@@ -141,6 +151,7 @@ using (var scope = app.Services.CreateScope())
 app.UseSwagger();
 app.UseSwaggerUI();
 
+app.UseResponseCompression();
 app.UseSerilogRequestLogging();
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseRouting();

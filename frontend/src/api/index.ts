@@ -101,9 +101,11 @@ export const articlesApi = {
 export const galleryApi = {
   getList: (params?: {
     mediaType?: string; eventId?: string; articleId?: string; hasEvent?: boolean; year?: number
-    showOnHome?: boolean; category?: string; page?: number; pageSize?: number
+    showOnHome?: boolean; category?: string; page?: number; pageSize?: number; full?: boolean
   }) => api.get('/gallery', { params }),
   getYears: () => api.get('/gallery/years'),
+  // 목록에서 축소본으로 받은 사진을 실제로 크게 볼 때 원본 화질을 따로 받아온다.
+  getById: (id: string) => api.get(`/gallery/${id}`),
   create: (data: {
     title: string; description?: string; mediaType: string; mediaUrl: string
     thumbnailUrl?: string; eventId?: string; articleId?: string; displayOrder?: number; showOnHome?: boolean

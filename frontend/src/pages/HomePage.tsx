@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { format } from 'date-fns'
 import { eventsApi, articlesApi, galleryApi } from '../api'
-import { getYouTubeEmbedUrl, getYouTubeThumbnail } from '../utils/youtube'
+import { getVideoEmbedUrl, getVideoThumbnail } from '../utils/youtube'
 import { getGoogleMapsLink } from '../utils/maps'
 import CampusHero from '../components/CampusHero'
 import type { EventList, ArticleList, GalleryItem, PagedResult } from '../types'
@@ -17,6 +17,20 @@ const HERO_IMAGES = [1, 2, 3, 4, 7, 9, 12, 22, 26].map(
 
 export default function HomePage() {
   const [selectedMedia, setSelectedMedia] = useState<GalleryItem | null>(null)
+
+  // 홈 위젯 목록은 사진마다 축소 썸네일로 채워져 있을 수 있어(초기 로딩 속도를 위해),
+  // 실제로 눌러서 크게 볼 때는 원본 화질을 따로 받아온다.
+  const openMedia = async (item: GalleryItem) => {
+    setSelectedMedia(item)
+    if (item.mediaType !== 'PHOTO' || !item.thumbnailUrl) return
+    try {
+      const res = await galleryApi.getById(item.id)
+      const full = res.data as GalleryItem
+      setSelectedMedia((prev) => (prev && prev.id === item.id ? { ...prev, mediaUrl: full.mediaUrl } : prev))
+    } catch {
+      // 무시 — 실패해도 이미 축소본이 떠 있으니 화면 자체는 문제없다.
+    }
+  }
 
   const { data: events } = useQuery({
     queryKey: ['events', 'upcoming'],
@@ -106,7 +120,7 @@ export default function HomePage() {
           <h2 className="text-xl font-bold text-gray-800">최근 행사 미디어 (사진 &amp; 영상)</h2>
           <Link to="/gallery" className="text-sm text-crimson font-medium hover:underline">갤러리 전체보기 &rarr;</Link>
         </div>
-        <MediaGrid items={media?.items} onSelect={setSelectedMedia} emptyText="등록된 미디어가 없습니다." />
+        <MediaGrid items={media?.items} onSelect={openMedia} emptyText="등록된 미디어가 없습니다." />
       </section>
 
       {/* 고대 자료실 (교가, 응원가 등 특정 행사와 무관한 자료) */}
@@ -115,7 +129,7 @@ export default function HomePage() {
           <h2 className="text-xl font-bold text-gray-800">고대 자료실 (교가 &amp; 응원가)</h2>
           <Link to="/gallery?category=SCHOOL_SONG" className="text-sm text-crimson font-medium hover:underline">갤러리 전체보기 &rarr;</Link>
         </div>
-        <MediaGrid items={archive?.items} onSelect={setSelectedMedia} emptyText="등록된 자료가 없습니다." />
+        <MediaGrid items={archive?.items} onSelect={openMedia} emptyText="등록된 자료가 없습니다." />
       </section>
 
       {selectedMedia && (
@@ -126,7 +140,7 @@ export default function HomePage() {
             ) : (
               <iframe
                 className="w-full aspect-video rounded-xl"
-                src={getYouTubeEmbedUrl(selectedMedia.mediaUrl)}
+                src={getVideoEmbedUrl(selectedMedia.mediaUrl)}
                 allowFullScreen
               />
             )}
@@ -191,7 +205,7 @@ function MediaGrid({
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       {items?.map((m) => {
-        const videoThumb = m.mediaType === 'VIDEO' ? (m.thumbnailUrl || getYouTubeThumbnail(m.mediaUrl)) : null
+        const videoThumb = m.mediaType === 'VIDEO' ? (m.thumbnailUrl || getVideoThumbnail(m.mediaUrl)) : null
         return (
           <button
             key={m.id}
@@ -200,10 +214,10 @@ function MediaGrid({
           >
             <div className="rounded-xl overflow-hidden bg-gray-100 aspect-square relative">
               {m.mediaType === 'PHOTO' ? (
-                <img src={m.mediaUrl} alt={m.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                <img src={m.mediaUrl} alt={m.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
               ) : videoThumb ? (
                 <>
-                  <img src={videoThumb} alt={m.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                  <img src={videoThumb} alt={m.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/25 text-white text-2xl">▶</div>
                 </>
               ) : (

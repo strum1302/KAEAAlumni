@@ -197,14 +197,32 @@ function EventCard({
 }) {
   const navigate = useNavigate()
   const isPast = new Date(ev.eventDate) < new Date()
+  const [loadingPhotos, setLoadingPhotos] = useState(false)
 
-  // 썸네일뿐 아니라 라이트박스에서 화살표로 넘겨볼 수 있도록 해당 행사의 사진 전체를 받아온다
+  // 썸네일은 사진 1장만 가볍게 받아온다 (행사마다 사진 전체를 미리 받아오면 목록 전체가
+  // 느려지므로, 나머지 사진은 실제로 썸네일을 클릭했을 때만 받아온다 — 아래 openLightbox 참고)
   const { data: thumbs } = useQuery({
     queryKey: ['gallery', 'event-thumb', ev.id],
-    queryFn: async () => (await galleryApi.getList({ eventId: ev.id, mediaType: 'PHOTO', pageSize: 50 })).data as PagedResult<GalleryItem>,
+    queryFn: async () => (await galleryApi.getList({ eventId: ev.id, mediaType: 'PHOTO', pageSize: 1 })).data as PagedResult<GalleryItem>,
   })
-  const photos = thumbs?.items ?? []
-  const thumb = photos[0]
+  const thumb = thumbs?.items[0]
+
+  const openLightbox = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (loadingPhotos) return
+    setLoadingPhotos(true)
+    try {
+      // full=true — 목록 API가 사진에 썸네일이 있으면 기본적으로 축소본을 대신 보내주는데,
+      // 여기(라이트박스)는 실제로 크게 보여줘야 하니 원본 화질로 받아온다.
+      const res = await galleryApi.getList({ eventId: ev.id, mediaType: 'PHOTO', pageSize: 50, full: true })
+      const photos = (res.data as PagedResult<GalleryItem>).items
+      if (photos.length) onOpenLightbox(photos, 0)
+    } catch {
+      // 무시 — 클릭 시 조용히 실패해도 목록 화면 자체에는 영향 없음
+    } finally {
+      setLoadingPhotos(false)
+    }
+  }
 
   return (
     <div className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow">
@@ -241,13 +259,15 @@ function EventCard({
         {thumb && (
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onOpenLightbox(photos, 0) }}
-            className="shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-gray-100 self-start relative"
+            onClick={openLightbox}
+            disabled={loadingPhotos}
+            className="shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-gray-100 self-start relative disabled:opacity-60"
           >
-            <img src={thumb.mediaUrl} alt={ev.title} className="w-full h-full object-cover hover:opacity-90 transition-opacity" />
-            {photos.length > 1 && (
-              <span className="absolute bottom-0.5 right-0.5 text-[10px] leading-none bg-black/60 text-white px-1 py-0.5 rounded">
-                +{photos.length - 1}
+            <img src={thumb.mediaUrl} alt={ev.title} loading="lazy"
+              className="w-full h-full object-cover hover:opacity-90 transition-opacity" />
+            {loadingPhotos && (
+              <span className="absolute inset-0 flex items-center justify-center bg-black/30 text-white text-[10px]">
+                로딩...
               </span>
             )}
           </button>

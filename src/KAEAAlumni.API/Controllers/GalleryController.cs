@@ -27,7 +27,12 @@ public class GalleryController : ControllerBase
         [FromQuery] bool? showOnHome,
         [FromQuery] string? category,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 24)
+        [FromQuery] int pageSize = 24,
+        // 목록(그리드)에서는 사진마다 풀사이즈 base64를 다 실어 보내면 갤러리 초기 로딩이
+        // 느려지므로, 기본값(false)에서는 사진에 썸네일이 있으면 그걸로 대신 실어 보낸다.
+        // 실제로 크게 볼 때(라이트박스)만 full=true로 다시 요청하거나 GET /gallery/{id}로
+        // 원본 화질을 따로 받아온다.
+        [FromQuery] bool full = false)
     {
         MediaType? type = null;
         if (!string.IsNullOrWhiteSpace(mediaType) &&
@@ -36,7 +41,8 @@ public class GalleryController : ControllerBase
 
         var (items, total) = await _galleryRepo.GetPagedAsync(type, eventId, articleId, page, pageSize, hasEvent, year, showOnHome, category);
         var dtos = items.Select(g => new GalleryItemDto(
-            g.Id, g.Title, g.Description, g.MediaType.ToString(), g.MediaUrl,
+            g.Id, g.Title, g.Description, g.MediaType.ToString(),
+            (!full && g.MediaType == MediaType.PHOTO && !string.IsNullOrEmpty(g.ThumbnailUrl)) ? g.ThumbnailUrl! : g.MediaUrl,
             g.ThumbnailUrl, g.DisplayOrder, g.ShowOnHome, g.EventId, g.Event?.Title, g.ArticleId, g.CreatedAt, g.Category
         )).ToList();
 
@@ -48,6 +54,19 @@ public class GalleryController : ControllerBase
     [HttpGet("years")]
     public async Task<IActionResult> GetYears()
         => Ok(await _galleryRepo.GetDistinctYearsAsync());
+
+    // 목록에서 썸네일(축소본)만 받은 사진을 실제로 클릭해서 크게 볼 때, 원본 화질을 따로 받아온다.
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetItem(Guid id)
+    {
+        var item = await _galleryRepo.GetByIdAsync(id);
+        if (item == null) return NotFound();
+
+        return Ok(new GalleryItemDto(
+            item.Id, item.Title, item.Description, item.MediaType.ToString(), item.MediaUrl,
+            item.ThumbnailUrl, item.DisplayOrder, item.ShowOnHome, item.EventId, item.Event?.Title, item.ArticleId, item.CreatedAt, item.Category
+        ));
+    }
 
     // 행사/게시글 하부 사진·영상 업로드 (Officer/Admin)
     [Authorize(Roles = "OFFICER,ADMIN")]

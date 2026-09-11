@@ -5,7 +5,7 @@ import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import { galleryApi, eventsApi } from '../api'
 import { useAuthStore } from '../store/authStore'
-import { getYouTubeEmbedUrl, getYouTubeThumbnail } from '../utils/youtube'
+import { getVideoEmbedUrl, getVideoThumbnail } from '../utils/youtube'
 import { fileToResizedDataUrl } from '../utils/image'
 import Pagination from '../components/common/Pagination'
 import type { EventList, GalleryItem, PagedResult } from '../types'
@@ -44,6 +44,21 @@ export default function GalleryPage() {
   const [deleting, setDeleting] = useState(false)
 
   useEffect(() => setPage(1), [scope, filter, year])
+
+  // 목록은 사진마다 축소 썸네일로 채워져 있을 수 있어(초기 로딩 속도를 위해), 실제로 눌러서
+  // 크게 볼 때는 원본 화질을 따로 받아온다. 우선 갖고 있는 걸로 바로 열고, 원본이 도착하면
+  // 교체하는 방식이라 클릭했을 때 기다리는 느낌 없이 바로 라이트박스가 뜬다.
+  const openLightbox = async (item: GalleryItem) => {
+    setSelected(item)
+    if (item.mediaType !== 'PHOTO' || !item.thumbnailUrl) return
+    try {
+      const res = await galleryApi.getById(item.id)
+      const full = res.data as GalleryItem
+      setSelected((prev) => (prev && prev.id === item.id ? { ...prev, mediaUrl: full.mediaUrl } : prev))
+    } catch {
+      // 무시 — 실패해도 이미 축소본이 떠 있으니 화면 자체는 문제없다.
+    }
+  }
 
   // 라이트박스가 열려 있을 때 ESC 키로도 닫을 수 있게 처리
   useEffect(() => {
@@ -136,16 +151,16 @@ export default function GalleryPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {data?.items.map((item) => {
-          const videoThumb = item.mediaType === 'VIDEO' ? (item.thumbnailUrl || getYouTubeThumbnail(item.mediaUrl)) : null
+          const videoThumb = item.mediaType === 'VIDEO' ? (item.thumbnailUrl || getVideoThumbnail(item.mediaUrl)) : null
           return (
             <div key={item.id} className="group">
-              <button onClick={() => setSelected(item)} className="text-left w-full block">
+              <button onClick={() => openLightbox(item)} className="text-left w-full block">
                 <div className="rounded-xl overflow-hidden bg-gray-100 aspect-square relative">
                   {item.mediaType === 'PHOTO' ? (
-                    <img src={item.mediaUrl} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                    <img src={item.mediaUrl} alt={item.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                   ) : videoThumb ? (
                     <>
-                      <img src={videoThumb} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      <img src={videoThumb} alt={item.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                       <div className="absolute inset-0 flex items-center justify-center bg-black/25 text-white text-2xl">▶</div>
                     </>
                   ) : (
@@ -185,7 +200,7 @@ export default function GalleryPage() {
               <div className="relative">
                 <iframe
                   className="w-full aspect-video rounded-xl"
-                  src={getYouTubeEmbedUrl(selected.mediaUrl)}
+                  src={getVideoEmbedUrl(selected.mediaUrl)}
                   allowFullScreen
                 />
                 <button
@@ -317,8 +332,14 @@ function AddGalleryModal({ onClose, onCreated }: { onClose: () => void; onCreate
   const handlePhotoFile = async (file: File) => {
     setUploading(true)
     try {
-      const dataUrl = await fileToResizedDataUrl(file, 1200, 1200, 0.8)
-      setForm((f) => ({ ...f, mediaUrl: dataUrl }))
+      // 원본(라이트박스에서 크게 볼 때)과 별도로 작은 썸네일을 함께 만들어 둔다.
+      // 목록(그리드) API는 이 썸네일이 있으면 그걸로 대신 응답을 채워서 보내기 때문에
+      // (GalleryController 참고), 사진이 많이 쌓여도 갤러리 목록 로딩이 느려지지 않는다.
+      const [dataUrl, thumbUrl] = await Promise.all([
+        fileToResizedDataUrl(file, 1200, 1200, 0.8),
+        fileToResizedDataUrl(file, 360, 360, 0.55),
+      ])
+      setForm((f) => ({ ...f, mediaUrl: dataUrl, thumbnailUrl: thumbUrl }))
     } catch (err: any) {
       toast.error(err?.message || '이미지를 처리하지 못했습니다.')
     } finally {
@@ -329,7 +350,7 @@ function AddGalleryModal({ onClose, onCreated }: { onClose: () => void; onCreate
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.mediaUrl) {
-      toast.error(form.mediaType === 'PHOTO' ? '사진을 선택해주세요.' : 'YouTube 링크를 입력해주세요.')
+      toast.error(form.mediaType === 'PHOTO' ? '사진을 선택해주세요.' : 'YouTube 또는 Google Drive 링크를 입력해주세요.')
       return
     }
     setSaving(true)
@@ -365,7 +386,7 @@ function AddGalleryModal({ onClose, onCreated }: { onClose: () => void; onCreate
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
           <div className="grid grid-cols-2 gap-3">
             <select value={form.mediaType}
-              onChange={(e) => setForm({ ...form, mediaType: e.target.value as 'PHOTO' | 'VIDEO', mediaUrl: '' })}
+              onChange={(e) => setForm({ ...form, mediaType: e.target.value as 'PHOTO' | 'VIDEO', mediaUrl: '', thumbnailUrl: '' })}
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
               <option value="VIDEO">영상</option>
               <option value="PHOTO">사진</option>
@@ -394,7 +415,7 @@ function AddGalleryModal({ onClose, onCreated }: { onClose: () => void; onCreate
           )}
           {form.mediaType === 'VIDEO' ? (
             <input required
-              placeholder="YouTube 링크 (예: https://www.youtube.com/watch?v=...)"
+              placeholder="YouTube 또는 Google Drive 링크 (Drive는 '링크가 있는 모든 사용자'로 공유 필요)"
               value={form.mediaUrl}
               onChange={(e) => setForm({ ...form, mediaUrl: e.target.value })}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
@@ -418,23 +439,23 @@ function AddGalleryModal({ onClose, onCreated }: { onClose: () => void; onCreate
           {form.mediaType === 'VIDEO' && (
             <div className="space-y-2">
               <input
-                placeholder="썸네일 이미지 URL (선택 — YouTube 링크는 자동으로 생성됩니다)"
+                placeholder="썸네일 이미지 URL (선택 — YouTube/Drive 링크는 자동으로 생성됩니다)"
                 value={form.thumbnailUrl}
                 onChange={(e) => setForm({ ...form, thumbnailUrl: e.target.value })}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
               />
               {(() => {
-                const preview = form.thumbnailUrl || getYouTubeThumbnail(form.mediaUrl)
+                const preview = form.thumbnailUrl || getVideoThumbnail(form.mediaUrl)
                 return preview ? (
                   <div className="flex items-center gap-2">
                     <img src={preview} alt="썸네일 미리보기" className="w-20 h-14 object-cover rounded border border-gray-200" />
                     <span className="text-xs text-gray-400">
-                      {form.thumbnailUrl ? '직접 입력한 썸네일' : 'YouTube에서 자동 생성된 썸네일'}
+                      {form.thumbnailUrl ? '직접 입력한 썸네일' : 'YouTube/Drive에서 자동 생성된 썸네일'}
                     </span>
                   </div>
                 ) : (
                   <p className="text-xs text-gray-400">
-                    YouTube 링크를 입력하면 썸네일이 자동으로 표시됩니다. 다른 영상 사이트는 썸네일 URL을 직접 입력해주세요.
+                    YouTube 또는 Google Drive 링크를 입력하면 썸네일이 자동으로 표시됩니다. 다른 영상 사이트는 썸네일 URL을 직접 입력해주세요.
                   </p>
                 )
               })()}
