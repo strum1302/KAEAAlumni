@@ -1,13 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
-import { eventsApi } from '../api'
+import { eventsApi, galleryApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import { getGoogleMapsLink } from '../utils/maps'
 import Pagination from '../components/common/Pagination'
-import type { EventDetail, EventList, PagedResult } from '../types'
+import type { EventDetail, EventList, GalleryItem, PagedResult } from '../types'
 
 const PAGE_SIZE = 12
 
@@ -15,12 +15,22 @@ export default function EventsPage() {
   const { member } = useAuthStore()
   const canManage = member?.role === 'OFFICER' || member?.role === 'ADMIN'
   const queryClient = useQueryClient()
-  const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [year, setYear] = useState<number | null>(null)
   const [showAdd, setShowAdd] = useState(false)
   const [editing, setEditing] = useState<EventDetail | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [lightboxPhoto, setLightboxPhoto] = useState<GalleryItem | null>(null)
+
+  // 라이트박스가 열려 있을 때 ESC 키로도 닫을 수 있게 처리
+  useEffect(() => {
+    if (!lightboxPhoto) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightboxPhoto(null)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [lightboxPhoto])
 
   const { data: years } = useQuery({
     queryKey: ['events', 'years'],
@@ -84,69 +94,41 @@ export default function EventsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {data?.items.map((ev) => {
-          const isPast = new Date(ev.eventDate) < new Date()
-          return (
-          <div key={ev.id} className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow">
-            <div onClick={() => navigate(`/events/${ev.id}`)} className="cursor-pointer">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="font-bold text-gray-800">{ev.title}</h2>
-                {!ev.isActive && <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">비활성</span>}
-              </div>
-              <p className="text-sm text-gray-500">일시: {format(new Date(ev.eventDate), 'yyyy.MM.dd (EEE) HH:mm')}</p>
-              <p className="text-sm text-gray-500">
-                장소: {ev.location}
-                {ev.googleMapsUrl && (
-                  <a
-                    href={getGoogleMapsLink(ev.googleMapsUrl)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="ml-2 text-crimson hover:underline"
-                  >
-                    지도에서 보기 &gt;
-                  </a>
-                )}
-              </p>
-              <div className="flex items-center justify-between mt-3 text-sm">
-                <span className="text-gray-500">
-                  참가비: {ev.fee > 0 ? `$${ev.fee.toFixed(2)}` : '무료'}
-                </span>
-                <span className="text-gray-500">
-                  신청 {ev.currentAttendees}{ev.maxAttendees > 0 ? ` / ${ev.maxAttendees}` : ''}명
-                </span>
-              </div>
-            </div>
-            {canManage && (
-              isPast ? (
-                <p className="text-right text-xs text-gray-400 mt-2 pt-2 border-t border-gray-50">
-                  이미 지난 행사는 수정/삭제할 수 없습니다.
-                </p>
-              ) : (
-                <div className="flex justify-end gap-3 mt-2 pt-2 border-t border-gray-50">
-                  <button
-                    onClick={() => openEdit(ev)}
-                    className="text-xs text-crimson hover:text-crimson-800"
-                  >
-                    수정
-                  </button>
-                  <button
-                    onClick={() => handleDelete(ev)}
-                    disabled={deletingId === ev.id}
-                    className="text-xs text-red-500 hover:text-red-600 disabled:opacity-50"
-                  >
-                    {deletingId === ev.id ? '삭제 중...' : '삭제'}
-                  </button>
-                </div>
-              )
-            )}
-          </div>
-          )
-        })}
+        {data?.items.map((ev) => (
+          <EventCard
+            key={ev.id}
+            ev={ev}
+            canManage={canManage}
+            deletingId={deletingId}
+            onEdit={openEdit}
+            onDelete={handleDelete}
+            onOpenLightbox={setLightboxPhoto}
+          />
+        ))}
         {!data?.items.length && <p className="text-sm text-gray-400">등록된 행사가 없습니다.</p>}
       </div>
 
       <Pagination page={page} totalPages={data?.totalPages ?? 1} onChange={setPage} />
+
+      {/* 썸네일 클릭 시 확대해서 보여주는 라이트박스 */}
+      {lightboxPhoto && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4" onClick={() => setLightboxPhoto(null)}>
+          <div className="max-w-5xl w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="relative inline-block max-w-full mx-auto">
+              <img src={lightboxPhoto.mediaUrl} alt={lightboxPhoto.title}
+                className="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-xl block" />
+              <button
+                onClick={() => setLightboxPhoto(null)}
+                aria-label="닫기"
+                className="absolute top-2 right-2 w-9 h-9 flex items-center justify-center rounded-full bg-black/50 text-white text-xl leading-none hover:bg-black/70"
+              >
+                &times;
+              </button>
+            </div>
+            <p className="text-white text-center mt-3">{lightboxPhoto.title}</p>
+          </div>
+        </div>
+      )}
 
       {showAdd && (
         <AddEventModal
@@ -165,6 +147,97 @@ export default function EventsPage() {
           }}
         />
       )}
+    </div>
+  )
+}
+
+// 행사 목록 카드 - 등록된 사진이 있으면 맨 위에 썸네일을 보여주고, 클릭하면 상세 페이지로
+// 이동하지 않고 바로 라이트박스로 확대해서 볼 수 있다.
+function EventCard({
+  ev, canManage, deletingId, onEdit, onDelete, onOpenLightbox,
+}: {
+  ev: EventList
+  canManage: boolean
+  deletingId: string | null
+  onEdit: (ev: EventList) => void
+  onDelete: (ev: EventList) => void
+  onOpenLightbox: (item: GalleryItem) => void
+}) {
+  const navigate = useNavigate()
+  const isPast = new Date(ev.eventDate) < new Date()
+
+  const { data: thumbs } = useQuery({
+    queryKey: ['gallery', 'event-thumb', ev.id],
+    queryFn: async () => (await galleryApi.getList({ eventId: ev.id, mediaType: 'PHOTO', pageSize: 1 })).data as PagedResult<GalleryItem>,
+  })
+  const thumb = thumbs?.items[0]
+
+  return (
+    <div className="bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-shadow">
+      {thumb && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onOpenLightbox(thumb) }}
+          className="block w-full aspect-video bg-gray-100 overflow-hidden group"
+        >
+          <img src={thumb.mediaUrl} alt={ev.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+        </button>
+      )}
+      <div className="p-5">
+        <div onClick={() => navigate(`/events/${ev.id}`)} className="cursor-pointer">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-bold text-gray-800">{ev.title}</h2>
+            {!ev.isActive && <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">비활성</span>}
+          </div>
+          <p className="text-sm text-gray-500">일시: {format(new Date(ev.eventDate), 'yyyy.MM.dd (EEE) HH:mm')}</p>
+          <p className="text-sm text-gray-500">
+            장소: {ev.location}
+            {ev.googleMapsUrl && (
+              <a
+                href={getGoogleMapsLink(ev.googleMapsUrl)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="ml-2 text-crimson hover:underline"
+              >
+                지도에서 보기 &gt;
+              </a>
+            )}
+          </p>
+          <div className="flex items-center justify-between mt-3 text-sm">
+            <span className="text-gray-500">
+              참가비: {ev.fee > 0 ? `$${ev.fee.toFixed(2)}` : '무료'}
+            </span>
+            <span className="text-gray-500">
+              신청 {ev.currentAttendees}{ev.maxAttendees > 0 ? ` / ${ev.maxAttendees}` : ''}명
+            </span>
+          </div>
+        </div>
+        {canManage && (
+          isPast ? (
+            <p className="text-right text-xs text-gray-400 mt-2 pt-2 border-t border-gray-50">
+              이미 지난 행사는 수정/삭제할 수 없습니다.
+            </p>
+          ) : (
+            <div className="flex justify-end gap-3 mt-2 pt-2 border-t border-gray-50">
+              <button
+                onClick={() => onEdit(ev)}
+                className="text-xs text-crimson hover:text-crimson-800"
+              >
+                수정
+              </button>
+              <button
+                onClick={() => onDelete(ev)}
+                disabled={deletingId === ev.id}
+                className="text-xs text-red-500 hover:text-red-600 disabled:opacity-50"
+              >
+                {deletingId === ev.id ? '삭제 중...' : '삭제'}
+              </button>
+            </div>
+          )
+        )}
+      </div>
     </div>
   )
 }
