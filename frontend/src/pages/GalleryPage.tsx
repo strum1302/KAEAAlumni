@@ -45,6 +45,16 @@ export default function GalleryPage() {
 
   useEffect(() => setPage(1), [scope, filter, year])
 
+  // 라이트박스가 열려 있을 때 ESC 키로도 닫을 수 있게 처리
+  useEffect(() => {
+    if (!selected) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelected(null)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [selected])
+
   const { data: years } = useQuery({
     queryKey: ['gallery', 'years'],
     queryFn: async () => (await galleryApi.getYears()).data as number[],
@@ -159,6 +169,13 @@ export default function GalleryPage() {
 
       {selected && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4" onClick={() => setSelected(null)}>
+          <button
+            onClick={() => setSelected(null)}
+            aria-label="닫기"
+            className="fixed top-4 right-4 z-[60] w-10 h-10 flex items-center justify-center rounded-full bg-white/10 text-white text-2xl leading-none hover:bg-white/20"
+          >
+            &times;
+          </button>
           <div className="max-w-5xl w-full" onClick={(e) => e.stopPropagation()}>
             {selected.mediaType === 'PHOTO' ? (
               <img src={selected.mediaUrl} alt={selected.title} className="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-xl mx-auto" />
