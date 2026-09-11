@@ -1,20 +1,25 @@
-using System.Net;
-using System.Net.Mail;
 using System.Threading.Channels;
 using KAEAAlumni.Application.Interfaces;
 using KAEAAlumni.Domain.Entities;
 using KAEAAlumni.Domain.Enums;
+using MailKit.Net.Smtp;
+using MailKit.Security;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using MimeKit;
 
 namespace KAEAAlumni.Infrastructure.Services;
 
-// ── SMTP 발송 (무료 SMTP 서비스, 예: SMTP2GO) ─────────────
-// appsettings.json / Railway 환경변수의 Smtp:* 키를 읽어 System.Net.Mail로 1통씩 발송한다.
-// (별도 NuGet 패키지 없이 .NET 기본 라이브러리만 사용 — 구현체를 SMTP2GO API/Amazon SES 등
-//  다른 방식으로 바꾸더라도 IEmailSender를 쓰는 나머지 코드는 손댈 필요가 없다.)
+// ── SMTP 발송 (Brevo 등 무료/유료 SMTP 서비스) ─────────────
+// appsettings.json / Railway 환경변수의 Smtp:* 키를 읽어 1통씩 발송한다.
+// MailKit을 쓰는 이유: .NET 기본 System.Net.Mail.SmtpClient는 마이크로소프트가 유지보수를
+// 최소화 모드로 전환한 지 오래됐고, 특히 Linux(예: Railway 컨테이너)에서 STARTTLS를 쓰는
+// 서버(Brevo, SendGrid 등)와 통신할 때 원인을 알 수 없는 "Failure sending mail." 같은
+// 뭉뚱그려진 실패를 내는 경우가 흔히 보고된다. MailKit은 크로스플랫폼 STARTTLS/SSL 처리가
+// 안정적이고 실패 시 실제 SMTP 응답 코드/사유가 그대로 예외 메시지에 담겨 나온다.
+// (구현체를 다른 방식으로 바꾸더라도 IEmailSender를 쓰는 나머지 코드는 손댈 필요가 없다.)
 public class SmtpEmailSender : IEmailSender
 {
     private readonly IConfiguration _config;
@@ -38,25 +43,24 @@ public class SmtpEmailSender : IEmailSender
             ?? throw new InvalidOperationException("Smtp:FromEmail이 설정되지 않았습니다. (Railway 환경변수 Smtp__FromEmail 확인)");
         var fromName = _config["Smtp:FromName"] ?? "고려대학교 미중서부 교우회";
 
-        using var client = new SmtpClient(host, port)
-        {
-            EnableSsl = enableSsl,
-            Credentials = string.IsNullOrEmpty(username) ? null : new NetworkCredential(username, password),
-        };
+        var message = new MimeMessage();
+        message.From.Add(new MailboxAddress(fromName, fromEmail));
+        message.To.Add(string.IsNullOrWhiteSpace(toName) ? MailboxAddress.Parse(toEmail) : new MailboxAddress(toName, toEmail));
+        message.Subject = subject;
+        message.Body = new TextPart("plain") { Text = body };
 
-        using var message = new MailMessage
-        {
-            From = new MailAddress(fromEmail, fromName),
-            Subject = subject,
-            Body = body,
-            IsBodyHtml = false,
-        };
-        message.To.Add(string.IsNullOrWhiteSpace(toName) ? new MailAddress(toEmail) : new MailAddress(toEmail, toName));
+        // 465 포트는 처음부터 SSL로 접속(SslOnConnect)하고, 587(또는 그 외) 포트는
+        // 연결 후 STARTTLS로 전환하는 방식(StartTls)을 쓴다 — Brevo는 587/StartTls.
+        var socketOptions = port == 465
+            ? SecureSocketOptions.SslOnConnect
+            : enableSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.None;
 
-        // SmtpClient.SendMailAsync(MailMessage)에는 CancellationToken 오버로드가 없어
-        // 호출 직전에만 취소 여부를 확인한다 (발송 자체를 중간에 끊지는 못함).
-        cancellationToken.ThrowIfCancellationRequested();
-        await client.SendMailAsync(message);
+        using var client = new SmtpClient();
+        await client.ConnectAsync(host, port, socketOptions, cancellationToken);
+        if (!string.IsNullOrEmpty(username))
+            await client.AuthenticateAsync(username, password, cancellationToken);
+        await client.SendAsync(message, cancellationToken);
+        await client.DisconnectAsync(true, cancellationToken);
     }
 }
 
@@ -137,7 +141,18 @@ public class EmailDispatchService : BackgroundService
             catch (Exception ex)
             {
                 log.Status = EmailLogStatus.FAILED;
-                log.ErrorMessage = ex.Message.Length > 500 ? ex.Message[..500] : ex.Message;
+                // SmtpClient는 "Failure sending mail." 같은 의미 없는 상위 메시지만 던지고
+                // 실제 원인(인증 실패, 연결 거부 등)은 InnerException에 들어있는 경우가 많아
+                // 함께 기록한다. 여러 겹으로 감싸져 있을 수 있어 가장 안쪽까지 따라간다.
+                var detail = ex.Message;
+                var inner = ex.InnerException;
+                while (inner != null)
+                {
+                    detail += " | inner: " + inner.Message;
+                    inner = inner.InnerException;
+                }
+                log.ErrorMessage = detail.Length > 500 ? detail[..500] : detail;
+                _logger.LogWarning(ex, "이메일 발송 실패: batch={BatchId} to={ToEmail}", batch.Id, log.ToEmail);
                 batch.FailureCount++;
             }
             // 한 통씩 저장 — 중간에 프로세스가 죽어도 이미 처리한 건은 재발송 대상에서 빠진다.
