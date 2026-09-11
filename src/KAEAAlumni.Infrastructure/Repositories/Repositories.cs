@@ -190,7 +190,16 @@ public class GalleryItemRepository : Repository<GalleryItem>, IGalleryItemReposi
         if (showOnHome.HasValue)
             query = query.Where(g => g.ShowOnHome == showOnHome.Value);
 
-        query = query.OrderBy(g => g.DisplayOrder).ThenByDescending(g => g.CreatedAt);
+        if (hasEvent == true)
+        {
+            // 행사에 연결된 미디어("최근 행사 미디어", 행사 사진 탭)는 최신 행사(행사일자 내림차순)의
+            // 사진이 먼저 보이도록 정렬하고, 같은 행사 안에서는 기존처럼 등록 순서(DisplayOrder)를 따릅니다.
+            query = query.OrderByDescending(g => g.Event!.EventDate).ThenBy(g => g.DisplayOrder).ThenByDescending(g => g.CreatedAt);
+        }
+        else
+        {
+            query = query.OrderBy(g => g.DisplayOrder).ThenByDescending(g => g.CreatedAt);
+        }
 
         var total = await query.CountAsync();
         var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
