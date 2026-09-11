@@ -158,6 +158,8 @@ public class AppDbContext : DbContext
             e.Property(g => g.ThumbnailUrl).HasColumnName("thumbnail_url");
             e.Property(g => g.DisplayOrder).HasColumnName("display_order");
             e.Property(g => g.ShowOnHome).HasColumnName("show_on_home");
+            e.Property(g => g.Category).HasColumnName("category").HasMaxLength(20);
+            e.HasIndex(g => g.Category);
             e.Property(g => g.CreatedAt).HasColumnName("created_at");
         });
 

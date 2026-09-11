@@ -45,7 +45,7 @@ public interface IArticleRepository : IRepository<Domain.Entities.Article>
 public interface IGalleryItemRepository : IRepository<Domain.Entities.GalleryItem>
 {
     Task<(List<Domain.Entities.GalleryItem> Items, int Total)> GetPagedAsync(
-        MediaType? mediaType, Guid? eventId, Guid? articleId, int page, int pageSize, bool? hasEvent = null, int? year = null, bool? showOnHome = null);
+        MediaType? mediaType, Guid? eventId, Guid? articleId, int page, int pageSize, bool? hasEvent = null, int? year = null, bool? showOnHome = null, string? category = null);
     Task<List<int>> GetDistinctYearsAsync();
 }
 

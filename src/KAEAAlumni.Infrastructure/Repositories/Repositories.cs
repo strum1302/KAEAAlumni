@@ -166,7 +166,7 @@ public class GalleryItemRepository : Repository<GalleryItem>, IGalleryItemReposi
     public GalleryItemRepository(AppDbContext db) : base(db) { }
 
     public async Task<(List<GalleryItem> Items, int Total)> GetPagedAsync(
-        MediaType? mediaType, Guid? eventId, Guid? articleId, int page, int pageSize, bool? hasEvent = null, int? year = null, bool? showOnHome = null)
+        MediaType? mediaType, Guid? eventId, Guid? articleId, int page, int pageSize, bool? hasEvent = null, int? year = null, bool? showOnHome = null, string? category = null)
     {
         var query = _db.GalleryItems.Include(g => g.Event).AsQueryable();
 
@@ -176,10 +176,13 @@ public class GalleryItemRepository : Repository<GalleryItem>, IGalleryItemReposi
             query = query.Where(g => g.EventId == eventId.Value);
         if (articleId.HasValue)
             query = query.Where(g => g.ArticleId == articleId.Value);
-        // 홈페이지에서 "최근 행사 미디어"(행사에 연결된 항목)와 "고대 자료실"(교가/응원가 등
-        // 특정 행사와 무관한 항목)을 분리해서 보여주기 위한 필터.
+        // 홈페이지에서 "최근 행사 미디어"(행사에 연결된 항목)와 "고대 자료실"/"학교 갤러리"(교가/응원가,
+        // 캠퍼스 사진 등 특정 행사와 무관한 항목)를 분리해서 보여주기 위한 필터.
         if (hasEvent.HasValue)
             query = hasEvent.Value ? query.Where(g => g.EventId != null) : query.Where(g => g.EventId == null);
+        // 행사와 무관한 항목을 다시 "SCHOOL_SONG"(교가/응원가)과 "CAMPUS"(캠퍼스 사진)로 세분화.
+        if (!string.IsNullOrWhiteSpace(category))
+            query = query.Where(g => g.Category == category);
         // 갤러리 메인 페이지의 연도 선택 드롭다운용 필터 (등록일 기준).
         if (year.HasValue)
             query = query.Where(g => g.CreatedAt.Year == year.Value);

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
@@ -17,10 +18,24 @@ function mediaLabel(item: GalleryItem): string {
   return item.eventTitle ? `${item.eventTitle} - ${item.title}` : item.title
 }
 
+// 행사 사진 / 학교 캠퍼스 사진 / 교가·응원가 자료를 서로 섞이지 않게 나눠 볼 수 있는 대분류.
+// URL의 ?category=CAMPUS 또는 ?category=SCHOOL_SONG 으로 홈페이지에서 바로 연결됩니다.
+type GalleryScope = 'ALL' | 'EVENT' | 'CAMPUS' | 'SCHOOL_SONG'
+const SCOPE_LABELS: Record<GalleryScope, string> = {
+  ALL: '전체보기', EVENT: '행사 사진', CAMPUS: '학교 갤러리', SCHOOL_SONG: '교가 · 응원가',
+}
+
 export default function GalleryPage() {
   const { member } = useAuthStore()
   const canManage = member?.role === 'OFFICER' || member?.role === 'ADMIN'
   const queryClient = useQueryClient()
+  const [searchParams] = useSearchParams()
+  const initialScope: GalleryScope =
+    searchParams.get('category') === 'CAMPUS' ? 'CAMPUS'
+    : searchParams.get('category') === 'SCHOOL_SONG' ? 'SCHOOL_SONG'
+    : searchParams.get('hasEvent') === 'true' ? 'EVENT'
+    : 'ALL'
+  const [scope, setScope] = useState<GalleryScope>(initialScope)
   const [filter, setFilter] = useState<'ALL' | 'PHOTO' | 'VIDEO'>('ALL')
   const [year, setYear] = useState<number | null>(null)
   const [selected, setSelected] = useState<GalleryItem | null>(null)
@@ -28,7 +43,7 @@ export default function GalleryPage() {
   const [showAdd, setShowAdd] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
-  useEffect(() => setPage(1), [filter, year])
+  useEffect(() => setPage(1), [scope, filter, year])
 
   const { data: years } = useQuery({
     queryKey: ['gallery', 'years'],
@@ -36,9 +51,13 @@ export default function GalleryPage() {
   })
 
   const { data } = useQuery({
-    queryKey: ['gallery', 'all', filter, year, page],
+    queryKey: ['gallery', 'all', scope, filter, year, page],
     queryFn: async () => (await galleryApi.getList({
-      mediaType: filter === 'ALL' ? undefined : filter, year: year ?? undefined, page, pageSize: PAGE_SIZE,
+      mediaType: filter === 'ALL' ? undefined : filter,
+      year: year ?? undefined,
+      hasEvent: scope === 'EVENT' ? true : scope === 'CAMPUS' || scope === 'SCHOOL_SONG' ? false : undefined,
+      category: scope === 'CAMPUS' ? 'CAMPUS' : scope === 'SCHOOL_SONG' ? 'SCHOOL_SONG' : undefined,
+      page, pageSize: PAGE_SIZE,
     })).data as PagedResult<GalleryItem>,
   })
 
@@ -70,7 +89,18 @@ export default function GalleryPage() {
           </button>
         )}
       </div>
-      <p className="text-sm text-gray-500 mb-4">행사 사진 &amp; 영상 아카이브</p>
+      <p className="text-sm text-gray-500 mb-4">행사 사진, 학교 캠퍼스 사진, 교가 &middot; 응원가 아카이브</p>
+
+      <div className="flex gap-2 flex-wrap mb-3">
+        {(['ALL', 'EVENT', 'CAMPUS', 'SCHOOL_SONG'] as const).map((s) => (
+          <button key={s} onClick={() => setScope(s)}
+            className={`px-4 py-1.5 text-sm rounded-full font-medium ${
+              scope === s ? 'bg-crimson text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}>
+            {SCOPE_LABELS[s]}
+          </button>
+        ))}
+      </div>
 
       <div className="flex items-center justify-between gap-2 mb-6 flex-wrap">
         <div className="flex gap-2">
@@ -246,6 +276,7 @@ function AddGalleryModal({ onClose, onCreated }: { onClose: () => void; onCreate
   const [form, setForm] = useState({
     title: '', description: '', mediaType: 'VIDEO' as 'PHOTO' | 'VIDEO',
     mediaUrl: '', thumbnailUrl: '', eventId: '', displayOrder: 0, showOnHome: true,
+    category: '' as '' | 'CAMPUS' | 'SCHOOL_SONG',
   })
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -285,6 +316,7 @@ function AddGalleryModal({ onClose, onCreated }: { onClose: () => void; onCreate
         eventId: form.eventId || undefined,
         displayOrder: form.displayOrder,
         showOnHome: form.showOnHome,
+        category: form.eventId ? undefined : (form.category || undefined),
       })
       toast.success('등록되었습니다.')
       onCreated()
@@ -319,6 +351,20 @@ function AddGalleryModal({ onClose, onCreated }: { onClose: () => void; onCreate
               ))}
             </select>
           </div>
+          {!form.eventId && (
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">
+                분류 (연결된 행사가 없을 때만 — 홈페이지의 "학교 갤러리"/"고대 자료실" 위젯에 노출됩니다)
+              </label>
+              <select value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value as typeof form.category })}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                <option value="">분류 없음 (갤러리 전체보기에만 노출)</option>
+                <option value="CAMPUS">캠퍼스 사진 (학교 갤러리)</option>
+                <option value="SCHOOL_SONG">교가 / 응원가 등 자료 (고대 자료실)</option>
+              </select>
+            </div>
+          )}
           {form.mediaType === 'VIDEO' ? (
             <input required
               placeholder="YouTube 링크 (예: https://www.youtube.com/watch?v=...)"

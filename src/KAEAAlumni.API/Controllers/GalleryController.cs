@@ -25,6 +25,7 @@ public class GalleryController : ControllerBase
         [FromQuery] bool? hasEvent,
         [FromQuery] int? year,
         [FromQuery] bool? showOnHome,
+        [FromQuery] string? category,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 24)
     {
@@ -33,10 +34,10 @@ public class GalleryController : ControllerBase
             Enum.TryParse<MediaType>(mediaType, true, out var parsed))
             type = parsed;
 
-        var (items, total) = await _galleryRepo.GetPagedAsync(type, eventId, articleId, page, pageSize, hasEvent, year, showOnHome);
+        var (items, total) = await _galleryRepo.GetPagedAsync(type, eventId, articleId, page, pageSize, hasEvent, year, showOnHome, category);
         var dtos = items.Select(g => new GalleryItemDto(
             g.Id, g.Title, g.Description, g.MediaType.ToString(), g.MediaUrl,
-            g.ThumbnailUrl, g.DisplayOrder, g.ShowOnHome, g.EventId, g.Event?.Title, g.ArticleId, g.CreatedAt
+            g.ThumbnailUrl, g.DisplayOrder, g.ShowOnHome, g.EventId, g.Event?.Title, g.ArticleId, g.CreatedAt, g.Category
         )).ToList();
 
         return Ok(new PagedResultDto<GalleryItemDto>(
@@ -66,7 +67,8 @@ public class GalleryController : ControllerBase
             EventId = dto.EventId,
             ArticleId = dto.ArticleId,
             DisplayOrder = dto.DisplayOrder,
-            ShowOnHome = dto.ShowOnHome
+            ShowOnHome = dto.ShowOnHome,
+            Category = dto.Category
         };
         await _galleryRepo.AddAsync(item);
         await _galleryRepo.SaveChangesAsync();

@@ -114,6 +114,7 @@ export interface GalleryItem {
   eventTitle?: string
   articleId?: string
   createdAt: string
+  category?: string | null // 'SCHOOL_SONG' | 'CAMPUS' | null (행사와 무관한 항목만 해당)
 }
 
 // ── Payment ─────────────────────────────────────────────

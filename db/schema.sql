@@ -166,6 +166,44 @@ ALTER TABLE events ADD COLUMN IF NOT EXISTS google_maps_url TEXT;
 -- 기본값은 TRUE.
 ALTER TABLE gallery_items ADD COLUMN IF NOT EXISTS show_on_home BOOLEAN NOT NULL DEFAULT TRUE;
 
+-- 행사와 무관한(event_id IS NULL) 갤러리 항목을 다시 세분화하기 위한 분류.
+-- 'SCHOOL_SONG'(교가/응원가 등 기존 "고대 자료실" 자료), 'CAMPUS'(캠퍼스 사진, "학교 갤러리")
+-- 중 하나이거나, 미분류 시 NULL(전체보기에서만 노출).
+ALTER TABLE gallery_items ADD COLUMN IF NOT EXISTS category VARCHAR(20);
+CREATE INDEX IF NOT EXISTS idx_gallery_category ON gallery_items(category);
+
+-- 이 컬럼이 생기기 전에 등록된 "고대 자료실"(교가/응원가 등) 항목들을 SCHOOL_SONG으로
+-- 명시적으로 표시합니다. 홈페이지의 "고대 자료실" 위젯이 이제 category='SCHOOL_SONG'
+-- 기준으로 조회하므로, 이 백필이 없으면 기존 자료가 갑자기 안 보이게 됩니다.
+UPDATE gallery_items SET category = 'SCHOOL_SONG' WHERE event_id IS NULL AND category IS NULL;
+
+-- "학교 갤러리"(캠퍼스 사진) — 히어로 배너에 쓰지 않은 나머지 캠퍼스 사진 18장을 등록합니다.
+-- media_url은 프론트엔드에 이미 정적 파일로 배포되어 있는 /images/hero/hero-NN.jpg를 그대로
+-- 재사용합니다. media_url 기준으로 이미 등록된 항목은 건너뛰어 재실행해도 중복되지 않습니다.
+INSERT INTO gallery_items (title, media_type, media_url, category, display_order, show_on_home)
+SELECT v.title, v.media_type, v.media_url, v.category, v.display_order, v.show_on_home
+FROM (VALUES
+    ('캠퍼스 - 나뭇잎 사이로 보이는 시계탑', 'PHOTO', '/images/hero/hero-05.jpg', 'CAMPUS', 10, true),
+    ('캠퍼스 - 잔디밭에서 바라본 시계탑', 'PHOTO', '/images/hero/hero-06.jpg', 'CAMPUS', 11, true),
+    ('캠퍼스 - 야경 (본관 앞 광장)', 'PHOTO', '/images/hero/hero-08.jpg', 'CAMPUS', 12, true),
+    ('캠퍼스 - 아치 너머로 보이는 시계탑 (노을)', 'PHOTO', '/images/hero/hero-10.jpg', 'CAMPUS', 13, true),
+    ('캠퍼스 - 정문 아치', 'PHOTO', '/images/hero/hero-11.jpg', 'CAMPUS', 14, true),
+    ('캠퍼스 - 졸업 시즌 거리 풍경', 'PHOTO', '/images/hero/hero-13.jpg', 'CAMPUS', 15, true),
+    ('캠퍼스 - 나무 사이로 보이는 본관', 'PHOTO', '/images/hero/hero-14.jpg', 'CAMPUS', 16, true),
+    ('캠퍼스 - 눈 오는 밤', 'PHOTO', '/images/hero/hero-15.jpg', 'CAMPUS', 17, true),
+    ('캠퍼스 - 화창한 캠퍼스 거리', 'PHOTO', '/images/hero/hero-16.jpg', 'CAMPUS', 18, true),
+    ('캠퍼스 - 졸업식, 붉은 현수막', 'PHOTO', '/images/hero/hero-17.jpg', 'CAMPUS', 19, true),
+    ('캠퍼스 - 나뭇잎 사이 시계탑', 'PHOTO', '/images/hero/hero-18.jpg', 'CAMPUS', 20, true),
+    ('캠퍼스 - 잔디밭 테이블과 본관', 'PHOTO', '/images/hero/hero-19.jpg', 'CAMPUS', 21, true),
+    ('캠퍼스 - 호랑이 인형과 벚꽃', 'PHOTO', '/images/hero/hero-20.jpg', 'CAMPUS', 22, true),
+    ('캠퍼스 - 졸업 인형(타이거)과 현수막', 'PHOTO', '/images/hero/hero-21.jpg', 'CAMPUS', 23, true),
+    ('캠퍼스 - 응원단 (고연전)', 'PHOTO', '/images/hero/hero-23.jpg', 'CAMPUS', 24, true),
+    ('캠퍼스 - 배롱나무 꽃과 아치', 'PHOTO', '/images/hero/hero-24.jpg', 'CAMPUS', 25, true),
+    ('캠퍼스 - 계단과 배롱나무', 'PHOTO', '/images/hero/hero-25.jpg', 'CAMPUS', 26, true),
+    ('캠퍼스 - 잔디밭에 앉은 학생들', 'PHOTO', '/images/hero/hero-27.jpg', 'CAMPUS', 27, true)
+) AS v(title, media_type, media_url, category, display_order, show_on_home)
+WHERE NOT EXISTS (SELECT 1 FROM gallery_items g WHERE g.media_url = v.media_url);
+
 -- ------------------------------------------------------------------------------
 -- 게시글 댓글 및 좋아요 확장 (자유게시판/우리 이야기 전용, 로그인 회원만 사용 가능)
 -- ------------------------------------------------------------------------------

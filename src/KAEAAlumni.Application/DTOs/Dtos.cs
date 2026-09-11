@@ -148,7 +148,8 @@ public record GalleryItemDto(
     Guid? EventId,
     string? EventTitle,
     Guid? ArticleId,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    string? Category = null
 );
 
 public record CreateGalleryItemDto(
@@ -160,7 +161,8 @@ public record CreateGalleryItemDto(
     Guid? EventId,
     Guid? ArticleId,
     int DisplayOrder = 0,   // 낮을수록 먼저 표시 (예: 교가는 0)
-    bool ShowOnHome = true  // false면 갤러리 전체 목록에만 노출되고 홈페이지 목록에서는 제외됨
+    bool ShowOnHome = true, // false면 갤러리 전체 목록에만 노출되고 홈페이지 목록에서는 제외됨
+    string? Category = null // 행사와 무관한 항목일 때만 사용: "SCHOOL_SONG" | "CAMPUS"
 );
 
 public record UpdateGalleryItemOrderDto(

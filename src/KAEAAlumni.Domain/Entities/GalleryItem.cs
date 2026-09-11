@@ -20,6 +20,10 @@ public class GalleryItem : BaseEntity
     public string? ThumbnailUrl { get; set; }
     public int DisplayOrder { get; set; } = 0;
 
-    // 홈페이지 "최근 행사 미디어"/"고대 자료실" 목록 노출 여부. false여도 갤러리 전체 목록에는 계속 노출됨.
+    // 홈페이지 "최근 행사 미디어"/"고대 자료실"/"학교 갤러리" 목록 노출 여부. false여도 갤러리 전체 목록에는 계속 노출됨.
     public bool ShowOnHome { get; set; } = true;
+
+    // 행사와 무관한(EventId == null) 항목을 다시 세분화하기 위한 분류.
+    // "SCHOOL_SONG"(교가/응원가 등), "CAMPUS"(캠퍼스 사진) 중 하나이거나, 미분류 시 null.
+    public string? Category { get; set; }
 }
