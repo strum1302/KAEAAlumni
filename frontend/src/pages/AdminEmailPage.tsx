@@ -35,13 +35,14 @@ export default function AdminEmailPage() {
     queryFn: async () => (await emailApi.getBatches({
       kind: kindFilter === 'ALL' ? undefined : kindFilter, page, pageSize: PAGE_SIZE,
     })).data as PagedResult<EmailBatch>,
-    // 발송중/대기중인 배치가 있으면 완료될 때까지 자동으로 다시 조회한다.
-    // (재발송 버튼을 눌러도 그 순간 한 번만 새로고침하고 끝이라, 실제로는 처리가
-    // 끝났는데도 화면엔 "발송중"이 그대로 멈춰 있는 것처럼 보이는 문제가 있었다.)
+    // 발송중/대기중인 배치가 있으면 짧은 주기로, 없어도 새 배치(다른 화면/다른 관리자가
+    // 방금 보낸 메일)가 뜰 수 있으니 느슨한 주기로 계속 다시 조회한다.
+    // (재발송 버튼을 눌러도 그 순간 한 번만 새로고침하고 끝이라, 실제로는 처리가 끝나거나
+    // 새로 발송됐는데도 화면이 그대로 멈춰 있는 것처럼 보이는 문제가 있었다.)
     refetchInterval: (query) => {
       const data = query.state.data as PagedResult<EmailBatch> | undefined
       const inProgress = data?.items.some((b) => b.status === 'PENDING' || b.status === 'SENDING')
-      return inProgress ? 1500 : false
+      return inProgress ? 1500 : 7000
     },
   })
 
