@@ -104,15 +104,6 @@ export default function GalleryPage() {
 
       <div className="flex items-center justify-between gap-2 mb-6 flex-wrap">
         <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value as 'ALL' | 'PHOTO' | 'VIDEO')}
-          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
-        >
-          <option value="ALL">전체보기</option>
-          <option value="PHOTO">사진만 보기</option>
-          <option value="VIDEO">영상만 보기</option>
-        </select>
-        <select
           value={year ?? ''}
           onChange={(e) => setYear(e.target.value ? Number(e.target.value) : null)}
           className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
@@ -121,6 +112,15 @@ export default function GalleryPage() {
           {years?.map((y) => (
             <option key={y} value={y}>{y}년</option>
           ))}
+        </select>
+        <select
+          value={filter}
+          onChange={(e) => setFilter(e.target.value as 'ALL' | 'PHOTO' | 'VIDEO')}
+          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm"
+        >
+          <option value="ALL">전체보기</option>
+          <option value="PHOTO">사진만 보기</option>
+          <option value="VIDEO">영상만 보기</option>
         </select>
       </div>
 
