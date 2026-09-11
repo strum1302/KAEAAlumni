@@ -33,16 +33,12 @@ export default function HomePage() {
     queryFn: async () => (await articlesApi.getList({ category: 'STORY', pageSize: 3 })).data as PagedResult<ArticleList>,
   })
 
-  // 행사에 연결된 사진/영상("최근 행사 미디어"), 캠퍼스 사진("학교 갤러리"), 교가·응원가 등
-  // 특정 행사와 무관한 고대 자료("고대 자료실")를 서로 섞이지 않도록 분리해서 보여줍니다.
+  // 행사에 연결된 사진/영상("최근 행사 미디어")과 교가·응원가 등 특정 행사와 무관한
+  // 고대 자료("고대 자료실")를 서로 섞이지 않도록 분리해서 보여줍니다.
+  // (캠퍼스 사진 "학교 갤러리" 섹션은 홈페이지에서는 제외 — /gallery?category=CAMPUS 에서 계속 볼 수 있습니다)
   const { data: media } = useQuery({
     queryKey: ['gallery', 'home', 'events'],
     queryFn: async () => (await galleryApi.getList({ hasEvent: true, showOnHome: true, pageSize: 4 })).data as PagedResult<GalleryItem>,
-  })
-
-  const { data: campus } = useQuery({
-    queryKey: ['gallery', 'home', 'campus'],
-    queryFn: async () => (await galleryApi.getList({ hasEvent: false, category: 'CAMPUS', showOnHome: true, pageSize: 4 })).data as PagedResult<GalleryItem>,
   })
 
   const { data: archive } = useQuery({
@@ -111,15 +107,6 @@ export default function HomePage() {
           <Link to="/gallery" className="text-sm text-crimson font-medium hover:underline">갤러리 전체보기 &rarr;</Link>
         </div>
         <MediaGrid items={media?.items} onSelect={setSelectedMedia} emptyText="등록된 미디어가 없습니다." />
-      </section>
-
-      {/* 학교 갤러리 (캠퍼스 사진) */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-800">학교 갤러리 (캠퍼스 사진)</h2>
-          <Link to="/gallery?category=CAMPUS" className="text-sm text-crimson font-medium hover:underline">갤러리 전체보기 &rarr;</Link>
-        </div>
-        <MediaGrid items={campus?.items} onSelect={setSelectedMedia} emptyText="등록된 캠퍼스 사진이 없습니다." />
       </section>
 
       {/* 고대 자료실 (교가, 응원가 등 특정 행사와 무관한 자료) */}
