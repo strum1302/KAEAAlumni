@@ -151,7 +151,7 @@ export default function EventsPage() {
   )
 }
 
-// 행사 목록 카드 - 등록된 사진이 있으면 맨 위에 썸네일을 보여주고, 클릭하면 상세 페이지로
+// 행사 목록 카드 - 등록된 사진이 있으면 작은 썸네일을 보여주고, 클릭하면 상세 페이지로
 // 이동하지 않고 바로 라이트박스로 확대해서 볼 수 있다.
 function EventCard({
   ev, canManage, deletingId, onEdit, onDelete, onOpenLightbox,
@@ -173,19 +173,9 @@ function EventCard({
   const thumb = thumbs?.items[0]
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-shadow">
-      {thumb && (
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onOpenLightbox(thumb) }}
-          className="block w-full aspect-video bg-gray-100 overflow-hidden group"
-        >
-          <img src={thumb.mediaUrl} alt={ev.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-        </button>
-      )}
-      <div className="p-5">
-        <div onClick={() => navigate(`/events/${ev.id}`)} className="cursor-pointer">
+    <div className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow">
+      <div className="flex gap-3">
+        <div onClick={() => navigate(`/events/${ev.id}`)} className="cursor-pointer flex-1 min-w-0">
           <div className="flex items-center justify-between mb-2">
             <h2 className="font-bold text-gray-800">{ev.title}</h2>
             {!ev.isActive && <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">비활성</span>}
@@ -214,30 +204,39 @@ function EventCard({
             </span>
           </div>
         </div>
-        {canManage && (
-          isPast ? (
-            <p className="text-right text-xs text-gray-400 mt-2 pt-2 border-t border-gray-50">
-              이미 지난 행사는 수정/삭제할 수 없습니다.
-            </p>
-          ) : (
-            <div className="flex justify-end gap-3 mt-2 pt-2 border-t border-gray-50">
-              <button
-                onClick={() => onEdit(ev)}
-                className="text-xs text-crimson hover:text-crimson-800"
-              >
-                수정
-              </button>
-              <button
-                onClick={() => onDelete(ev)}
-                disabled={deletingId === ev.id}
-                className="text-xs text-red-500 hover:text-red-600 disabled:opacity-50"
-              >
-                {deletingId === ev.id ? '삭제 중...' : '삭제'}
-              </button>
-            </div>
-          )
+        {thumb && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onOpenLightbox(thumb) }}
+            className="shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-gray-100 self-start"
+          >
+            <img src={thumb.mediaUrl} alt={ev.title} className="w-full h-full object-cover hover:opacity-90 transition-opacity" />
+          </button>
         )}
       </div>
+      {canManage && (
+        isPast ? (
+          <p className="text-right text-xs text-gray-400 mt-2 pt-2 border-t border-gray-50">
+            이미 지난 행사는 수정/삭제할 수 없습니다.
+          </p>
+        ) : (
+          <div className="flex justify-end gap-3 mt-2 pt-2 border-t border-gray-50">
+            <button
+              onClick={() => onEdit(ev)}
+              className="text-xs text-crimson hover:text-crimson-800"
+            >
+              수정
+            </button>
+            <button
+              onClick={() => onDelete(ev)}
+              disabled={deletingId === ev.id}
+              className="text-xs text-red-500 hover:text-red-600 disabled:opacity-50"
+            >
+              {deletingId === ev.id ? '삭제 중...' : '삭제'}
+            </button>
+          </div>
+        )
+      )}
     </div>
   )
 }
