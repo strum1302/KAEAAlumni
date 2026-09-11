@@ -198,7 +198,13 @@ public class GalleryItemRepository : Repository<GalleryItem>, IGalleryItemReposi
         }
         else
         {
-            query = query.OrderBy(g => g.DisplayOrder).ThenByDescending(g => g.CreatedAt);
+            // hasEvent==false(학교 갤러리/고대 자료실만 조회) 또는 필터 없음("전체보기", 모든 종류가 섞임).
+            // 행사에 연결된 항목이 섞여 있으면 최신 행사 순으로, 행사와 무관한 항목(교가/응원가, 캠퍼스
+            // 사진 등)은 이벤트 날짜가 없으므로 가장 나중으로 밀려나고 그 안에서는 기존처럼 DisplayOrder로 정렬됩니다.
+            query = query
+                .OrderByDescending(g => g.EventId != null ? g.Event!.EventDate : DateTime.MinValue)
+                .ThenBy(g => g.DisplayOrder)
+                .ThenByDescending(g => g.CreatedAt);
         }
 
         var total = await query.CountAsync();
