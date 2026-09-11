@@ -43,9 +43,7 @@ export default function EventDetailPage() {
 
   return (
     <div className="space-y-8">
-      <Link to="/events" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-crimson">
-        &larr; 목록으로
-      </Link>
+      <Link to="/events" className="text-sm text-crimson hover:underline">&larr; 목록으로</Link>
 
       {/* 행사 헤더 */}
       <div>
