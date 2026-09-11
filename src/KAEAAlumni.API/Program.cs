@@ -86,12 +86,16 @@ builder.Services.AddScoped<IGalleryItemRepository, KAEAAlumni.Infrastructure.Rep
 builder.Services.AddScoped<IPaymentRepository, KAEAAlumni.Infrastructure.Repositories.PaymentRepository>();
 builder.Services.AddScoped<IEmailBatchRepository, KAEAAlumni.Infrastructure.Repositories.EmailBatchRepository>();
 
-// ── DI - Email (무료 SMTP 서비스로 메일 발송) ────────────
+// ── DI - Email (Brevo REST API로 메일 발송) ────────────
 // 큐는 프로세스 내 싱글턴(인메모리)이라 Railway가 재시작되면 대기 중이던 배치가 유실될 수 있음
 // (테이블 status가 PENDING/SENDING으로 남으므로 관리자가 발송 내역 화면에서 확인/재시도 가능).
 // 여러 인스턴스로 확장하면 DB 폴링 등 별도 큐로 교체 필요.
+// IEmailSender 구현체로 SMTP(SmtpEmailSender) 대신 BrevoApiEmailSender를 등록한다 —
+// Railway가 아웃바운드 SMTP 포트를 막고 있어 SMTP로는 계속 타임아웃이 났기 때문
+// (BrevoApiEmailSender 주석 참고). HttpClient 발급을 위해 AddHttpClient()가 필요하다.
+builder.Services.AddHttpClient();
 builder.Services.AddSingleton<IEmailQueue, KAEAAlumni.Infrastructure.Services.InMemoryEmailQueue>();
-builder.Services.AddScoped<IEmailSender, KAEAAlumni.Infrastructure.Services.SmtpEmailSender>();
+builder.Services.AddScoped<IEmailSender, KAEAAlumni.Infrastructure.Services.BrevoApiEmailSender>();
 builder.Services.AddHostedService<KAEAAlumni.Infrastructure.Services.EmailDispatchService>();
 
 // ── Swagger ───────────────────────────────────────

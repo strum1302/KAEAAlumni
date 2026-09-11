@@ -1,3 +1,5 @@
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Threading.Channels;
 using KAEAAlumni.Application.Interfaces;
 using KAEAAlumni.Domain.Entities;
@@ -12,14 +14,74 @@ using MimeKit;
 
 namespace KAEAAlumni.Infrastructure.Services;
 
-// ── SMTP 발송 (Brevo 등 무료/유료 SMTP 서비스) ─────────────
+// ── Brevo REST API 발송 (기본 사용) ─────────────────────────
+// Railway는 Free/Trial/Hobby 플랜에서 아웃바운드 SMTP(25/465/587/2525번 포트)를 전면
+// 차단하고 있고, Pro 플랜에서도 실제로는 안 되는 경우가 보고된다 — 그래서 SmtpEmailSender로
+// 무엇을 시도하든("Failure sending mail.", "The operation has timed out." 등) 결국 연결
+// 자체가 막혀서 실패했던 것이다. Railway 공식 문서도 SMTP 대신 HTTPS 기반 이메일 API를
+// 쓰라고 권장한다. 그래서 SMTP 프로토콜을 아예 쓰지 않고, Brevo의 트랜잭션 이메일 REST API
+// (HTTPS, 443번 포트라 막힐 일이 없다)로 발송한다. Railway 환경변수 Brevo__ApiKey 필요
+// (Brevo 대시보드 → 설정 → SMTP & API → "API Keys" 탭에서 발급 — SMTP 탭의 키와는 다르다).
+public class BrevoApiEmailSender : IEmailSender
+{
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IConfiguration _config;
+
+    public BrevoApiEmailSender(IHttpClientFactory httpClientFactory, IConfiguration config)
+    {
+        _httpClientFactory = httpClientFactory;
+        _config = config;
+    }
+
+    public async Task SendAsync(
+        string toEmail,
+        string? toName,
+        string subject,
+        string body,
+        CancellationToken cancellationToken = default)
+    {
+        var apiKey = _config["Brevo:ApiKey"]
+            ?? throw new InvalidOperationException("Brevo:ApiKey가 설정되지 않았습니다. (Railway 환경변수 Brevo__ApiKey 확인)");
+        var fromEmail = _config["Smtp:FromEmail"]
+            ?? throw new InvalidOperationException("Smtp:FromEmail이 설정되지 않았습니다. (Railway 환경변수 Smtp__FromEmail 확인)");
+        var fromName = _config["Smtp:FromName"] ?? "고려대학교 미중서부 교우회";
+
+        var payload = new
+        {
+            sender = new { name = fromName, email = fromEmail },
+            to = new[] { new { email = toEmail, name = toName } },
+            subject,
+            textContent = body,
+        };
+
+        var client = _httpClientFactory.CreateClient(nameof(BrevoApiEmailSender));
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.brevo.com/v3/smtp/email")
+        {
+            Content = JsonContent.Create(payload),
+        };
+        request.Headers.TryAddWithoutValidation("api-key", apiKey);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+        using var response = await client.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+            throw new InvalidOperationException(
+                $"Brevo API 발송 실패 ({(int)response.StatusCode} {response.StatusCode}): {errorBody}");
+        }
+    }
+}
+
+// ── SMTP 발송 (참고용 — 현재는 사용하지 않음) ─────────────
+// Railway가 아웃바운드 SMTP를 막고 있어(위 BrevoApiEmailSender 주석 참고) 지금은 이 구현체
+// 대신 BrevoApiEmailSender를 등록해서 쓴다. 나중에 Railway가 아니거나 SMTP가 열려있는
+// 환경으로 옮기게 되면 Program.cs에서 등록만 다시 이걸로 바꾸면 된다.
 // appsettings.json / Railway 환경변수의 Smtp:* 키를 읽어 1통씩 발송한다.
 // MailKit을 쓰는 이유: .NET 기본 System.Net.Mail.SmtpClient는 마이크로소프트가 유지보수를
-// 최소화 모드로 전환한 지 오래됐고, 특히 Linux(예: Railway 컨테이너)에서 STARTTLS를 쓰는
-// 서버(Brevo, SendGrid 등)와 통신할 때 원인을 알 수 없는 "Failure sending mail." 같은
-// 뭉뚱그려진 실패를 내는 경우가 흔히 보고된다. MailKit은 크로스플랫폼 STARTTLS/SSL 처리가
-// 안정적이고 실패 시 실제 SMTP 응답 코드/사유가 그대로 예외 메시지에 담겨 나온다.
-// (구현체를 다른 방식으로 바꾸더라도 IEmailSender를 쓰는 나머지 코드는 손댈 필요가 없다.)
+// 최소화 모드로 전환한 지 오래됐고, 특히 Linux에서 STARTTLS를 쓰는 서버(Brevo, SendGrid 등)와
+// 통신할 때 원인을 알 수 없는 "Failure sending mail." 같은 뭉뚱그려진 실패를 내는 경우가
+// 흔히 보고된다. MailKit은 크로스플랫폼 STARTTLS/SSL 처리가 안정적이고 실패 시 실제 SMTP
+// 응답 코드/사유가 그대로 예외 메시지에 담겨 나온다.
 public class SmtpEmailSender : IEmailSender
 {
     private readonly IConfiguration _config;
