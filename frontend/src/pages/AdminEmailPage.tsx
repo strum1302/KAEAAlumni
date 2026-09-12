@@ -53,7 +53,7 @@ export default function AdminEmailPage() {
         행사 공지, 게시글 알림, 가입 인증, 신규가입 관리자 알림, 비밀번호 재설정 등 시스템에서 나간 모든 메일의 발송 여부와 시각을 확인할 수 있습니다.
       </p>
 
-      <div className="bg-white border border-gray-100 rounded-xl p-5 mb-6 inline-block">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 mb-6 inline-block">
         <p className="text-xs text-gray-500 mb-1">이번 달 누적 발송 (성공)</p>
         <p className="text-2xl font-bold text-crimson">{summary?.sentThisMonth ?? 0}건</p>
         <p className="text-xs text-gray-400 mt-1">무료 SMTP 서비스는 월 발송 한도가 있으니 참고하세요.</p>
@@ -70,7 +70,7 @@ export default function AdminEmailPage() {
         ))}
       </div>
 
-      <div className="bg-white border border-gray-100 rounded-xl overflow-x-auto">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
         <table className="w-full text-sm min-w-[760px]">
           <thead className="bg-gray-50 text-gray-500">
             <tr>

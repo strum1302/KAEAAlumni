@@ -43,7 +43,7 @@ export default function JoinPage() {
       <h1 className="text-2xl font-bold text-gray-800 mb-1">신입 교우 명부 등록</h1>
       <p className="text-sm text-gray-500 mb-6">Membership Registration</p>
 
-      <form onSubmit={handleSubmit} className="bg-white border border-gray-100 rounded-2xl p-6 space-y-8">
+      <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 space-y-8">
         {/* 기본 인적사항 */}
         <fieldset className="space-y-4">
           <legend className="font-bold text-crimson mb-2">기본 인적사항</legend>

@@ -30,7 +30,7 @@ export default function VerifyEmailPage() {
 
   return (
     <div className="max-w-md mx-auto py-16">
-      <div className="bg-white border border-gray-100 rounded-2xl p-8 text-center">
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8 text-center">
         {status === 'loading' && <p className="text-gray-500">이메일 인증을 처리하는 중입니다...</p>}
         {status === 'success' && (
           <>

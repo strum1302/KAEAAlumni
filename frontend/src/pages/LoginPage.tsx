@@ -28,7 +28,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm bg-white border border-gray-100 rounded-2xl shadow-sm p-8">
+      <div className="w-full max-w-sm bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
         <div className="text-center mb-6">
           <div className="w-12 h-12 rounded-full bg-crimson text-white flex items-center justify-center font-bold mx-auto mb-3">KU</div>
           <h1 className="text-lg font-bold text-gray-800">고려대학교 미중서부 교우회</h1>

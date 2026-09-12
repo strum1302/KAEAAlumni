@@ -116,7 +116,7 @@ export default function ProfilePage() {
         <p className="text-sm text-gray-500">{member.role} · {member.entryYear} {member.major}</p>
       </div>
 
-      <section className="bg-white border border-gray-100 rounded-2xl p-6">
+      <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-crimson">내 정보</h2>
           {!editing && (
@@ -255,7 +255,7 @@ export default function ProfilePage() {
         )}
       </section>
 
-      <section className="bg-white border border-gray-100 rounded-2xl p-6">
+      <section className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-crimson">비밀번호 변경</h2>
           {!changingPassword && (
@@ -316,7 +316,7 @@ export default function ProfilePage() {
 
       <section>
         <h2 className="font-bold text-gray-800 mb-3">내 납부 내역</h2>
-        <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 text-gray-500">
               <tr>

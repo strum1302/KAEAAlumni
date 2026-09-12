@@ -159,7 +159,7 @@ export default function HomePage() {
             <h2 className="text-lg font-bold text-gray-800">공지사항</h2>
             <Link to="/community/notice" className="text-sm text-crimson hover:underline">더보기</Link>
           </div>
-          <ul className="divide-y divide-gray-100 bg-white rounded-xl border border-gray-100">
+          <ul className="divide-y divide-gray-100 bg-white rounded-xl border border-gray-200 shadow-sm">
             {notices?.items.map((a) => (
               <li key={a.id}>
                 <Link to={`/community/notice/${a.id}`} className="flex items-center justify-between gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-crimson-50">
@@ -176,7 +176,7 @@ export default function HomePage() {
             <h2 className="text-lg font-bold text-gray-800">우리 이야기 (교우 소식)</h2>
             <Link to="/community/story" className="text-sm text-crimson hover:underline">더보기</Link>
           </div>
-          <ul className="divide-y divide-gray-100 bg-white rounded-xl border border-gray-100">
+          <ul className="divide-y divide-gray-100 bg-white rounded-xl border border-gray-200 shadow-sm">
             {stories?.items.map((a) => (
               <li key={a.id}>
                 <Link to={`/community/story/${a.id}`} className="flex items-center justify-between gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-crimson-50">

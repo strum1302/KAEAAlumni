@@ -101,7 +101,7 @@ export default function AdminPaymentsPage() {
       </div>
 
       {/* 내역 테이블 */}
-      <div className="bg-white border border-gray-100 rounded-xl overflow-x-auto">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
         <table className="w-full text-sm min-w-[720px]">
           <thead className="bg-gray-50 text-gray-500">
             <tr>
@@ -158,7 +158,7 @@ export default function AdminPaymentsPage() {
 
 function SummaryCard({ label, value }: { label: string; value?: number }) {
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-5">
+    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
       <p className="text-xs text-gray-500 mb-1">{label}</p>
       <p className="text-2xl font-bold text-crimson">${(value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
     </div>

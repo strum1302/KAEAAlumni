@@ -9,7 +9,7 @@ export default function GivingPage() {
     <div className="max-w-2xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold text-gray-800">회비 및 후원</h1>
 
-      <div className="bg-white border border-gray-100 rounded-2xl p-6 space-y-4">
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 space-y-4">
         <h2 className="font-bold text-crimson">연회비 &amp; 후원 안내</h2>
         <p className="text-sm text-gray-600 leading-relaxed">
           정기 연회비는 매년 갱신되며, 미중서부 교우회 도네이션은 언제든지 후원하실 수 있습니다.

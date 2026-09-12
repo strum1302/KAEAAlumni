@@ -116,7 +116,7 @@ export default function CommunityPage() {
       </div>
 
       {showWrite && (
-        <form onSubmit={submit} className="bg-white border border-gray-100 rounded-xl p-5 mb-6 space-y-3">
+        <form onSubmit={submit} className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 mb-6 space-y-3">
           <input required placeholder="제목" value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
@@ -141,7 +141,7 @@ export default function CommunityPage() {
         </form>
       )}
 
-      <ul className="divide-y divide-gray-100 bg-white rounded-xl border border-gray-100">
+      <ul className="divide-y divide-gray-100 bg-white rounded-xl border border-gray-200 shadow-sm">
         {data?.items.map((a) => (
           <li key={a.id}>
             <Link to={`/community/${category}/${a.id}`}

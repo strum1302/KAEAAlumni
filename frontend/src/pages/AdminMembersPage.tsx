@@ -211,7 +211,7 @@ export default function AdminMembersPage() {
         </div>
       </div>
 
-      <div className="bg-white border border-gray-100 rounded-xl overflow-x-auto">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-x-auto">
         <table className="w-full text-sm min-w-[920px]">
           <thead className="bg-gray-50 text-gray-500">
             <tr>

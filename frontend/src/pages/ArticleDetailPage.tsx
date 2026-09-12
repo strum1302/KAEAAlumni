@@ -131,12 +131,12 @@ export default function ArticleDetailPage() {
           <div className="text-xs text-gray-400 mb-6">
             {article.authorName} · {format(new Date(article.createdAt), 'yyyy.MM.dd')} · 조회 {article.viewCount}
           </div>
-          <div className="bg-white border border-gray-100 rounded-xl p-6 text-sm text-gray-700 leading-relaxed">
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 text-sm text-gray-700 leading-relaxed">
             <ArticleContent content={article.content} />
           </div>
         </>
       ) : (
-        <form onSubmit={saveEdit} className="mt-3 space-y-3 bg-white border border-gray-100 rounded-xl p-5">
+        <form onSubmit={saveEdit} className="mt-3 space-y-3 bg-white border border-gray-200 rounded-xl shadow-sm p-5">
           <input required value={editForm.title}
             onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
@@ -163,7 +163,7 @@ export default function ArticleDetailPage() {
             {article.galleryItems.map((g) => (
               <div key={g.id} className="rounded-xl overflow-hidden bg-gray-100">
                 {g.mediaType === 'PHOTO' ? (
-                  <img src={g.mediaUrl} alt={g.title} className="w-full aspect-video object-cover" />
+                  <img src={g.mediaUrl} alt={g.title} loading="lazy" className="w-full aspect-video object-cover" />
                 ) : (
                   <div className="w-full aspect-video flex items-center justify-center bg-gray-800 text-white text-sm">▶ {g.title}</div>
                 )}

@@ -112,7 +112,7 @@ export default function AboutPage() {
             />
           </div>
         )}
-        <div className="bg-white border border-gray-100 rounded-xl p-6 space-y-3">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-3">
           <h2 className="font-bold text-crimson">회장 인사말</h2>
           <p className="text-sm text-gray-600 leading-relaxed">
             안녕하십니까, 고려대학교 미중서부 교우회 회장입니다. 1950년대부터 이어져 온 일리노이 및
@@ -127,7 +127,7 @@ export default function AboutPage() {
         <h2 className="text-lg font-bold text-gray-800 mb-3">임원진 조직도</h2>
         <div className="flex flex-wrap justify-center gap-4">
           {sortOfficers(officers ?? []).map((o) => (
-            <div key={o.id} className="bg-white border border-gray-100 rounded-xl p-4 text-center w-[200px]">
+            <div key={o.id} className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 text-center w-[200px]">
               {o.photoUrl ? (
                 <div className="w-[200px] h-[250px] rounded-lg bg-gray-50 flex items-center justify-center mx-auto mb-2 overflow-hidden">
                   <img
@@ -167,7 +167,7 @@ export default function AboutPage() {
           )}
         </div>
 
-        <div className="bg-white border border-gray-100 rounded-xl p-6 space-y-4">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-4">
           {!editingHistory ? (
             renderHistoryParagraphs(historyDetail?.content ?? DEFAULT_HISTORY_CONTENT)
           ) : (
@@ -225,7 +225,7 @@ export default function AboutPage() {
             })}
           </div>
         ) : (
-          <div className="bg-white border border-gray-100 rounded-xl p-6 text-sm text-gray-600">
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 text-sm text-gray-600">
             교가/응원가 영상은 준비 중입니다. 갤러리 메뉴에서 "연결된 행사 없음"으로 영상을 등록하면
             이 섹션에 자동으로 노출됩니다.
           </div>
