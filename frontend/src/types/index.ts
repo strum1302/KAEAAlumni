@@ -125,7 +125,7 @@ export interface Payment {
   memberId: string
   memberName: string
   graduationInfo: string
-  paymentType: 'MEMBERSHIP_FEE' | 'MEMBERSHIP_FEE_BOARD' | 'DONATION' | 'EVENT_FEE'
+  paymentType: 'MEMBERSHIP_FEE' | 'MEMBERSHIP_FEE_BOARD' | 'DONATION' | 'EVENT_FEE' | 'GENERAL'
   targetYear: number
   amount: number
   paymentMethod: string

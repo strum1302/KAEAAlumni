@@ -20,7 +20,7 @@ export default function AdminPaymentsPage() {
   const canManagePayments = isAdmin || member?.officerTitle === '회계'
   const queryClient = useQueryClient()
   const [year, setYear] = useState(currentYear)
-  const [typeFilter, setTypeFilter] = useState<'ALL' | 'MEMBERSHIP_FEE' | 'MEMBERSHIP_FEE_BOARD' | 'DONATION' | 'EVENT_FEE'>('ALL')
+  const [typeFilter, setTypeFilter] = useState<'ALL' | 'MEMBERSHIP_FEE' | 'MEMBERSHIP_FEE_BOARD' | 'DONATION' | 'EVENT_FEE' | 'GENERAL'>('ALL')
   const [showAdd, setShowAdd] = useState(false)
   const [editing, setEditing] = useState<Payment | null>(null)
   const [page, setPage] = useState(1)
@@ -60,6 +60,7 @@ export default function AdminPaymentsPage() {
   const methodLabel = (m: string) => ({ ZELLE: 'ZELLE', VENMO: 'VENMO', CHECK: 'CHECK', CREDIT_CARD: 'CREDIT CARD', CASH: 'CASH' }[m] || m)
   const typeLabel = (t: string) => ({
     MEMBERSHIP_FEE: '연회비', MEMBERSHIP_FEE_BOARD: '연회비+이사회비', DONATION: '도네이션', EVENT_FEE: '행사비',
+    GENERAL: '통합(과거자료)',
   }[t] || t)
 
   return (
@@ -82,7 +83,7 @@ export default function AdminPaymentsPage() {
       {/* 필터 + 등록 버튼 */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="flex gap-2">
-          {(['ALL', 'MEMBERSHIP_FEE', 'MEMBERSHIP_FEE_BOARD', 'DONATION', 'EVENT_FEE'] as const).map((t) => (
+          {(['ALL', 'MEMBERSHIP_FEE', 'MEMBERSHIP_FEE_BOARD', 'DONATION', 'EVENT_FEE', 'GENERAL'] as const).map((t) => (
             <button key={t} onClick={() => setTypeFilter(t)}
               className={`px-3 py-1.5 text-sm rounded-full font-medium ${
                 typeFilter === t ? 'bg-crimson text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -234,6 +235,7 @@ function PaymentModal({ payment, onClose, onSaved }: { payment?: Payment; onClos
               <option value="MEMBERSHIP_FEE_BOARD">연회비+이사회비 ($200)</option>
               <option value="DONATION">도네이션</option>
               <option value="EVENT_FEE">행사비</option>
+              <option value="GENERAL">통합(과거자료 - 항목 구분 어려운 경우)</option>
             </select>
             <input required type="number" placeholder="연도" value={form.targetYear}
               onChange={(e) => setForm({ ...form, targetYear: e.target.value })}

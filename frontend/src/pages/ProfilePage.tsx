@@ -333,7 +333,8 @@ export default function ProfilePage() {
                   <td className="px-4 py-2">
                     {p.paymentType === 'MEMBERSHIP_FEE' ? '연회비'
                       : p.paymentType === 'MEMBERSHIP_FEE_BOARD' ? '연회비+이사회비'
-                      : p.paymentType === 'DONATION' ? '도네이션' : '행사비'}
+                      : p.paymentType === 'DONATION' ? '도네이션'
+                      : p.paymentType === 'EVENT_FEE' ? '행사비' : '통합(과거자료)'}
                   </td>
                   <td className="px-4 py-2">${p.amount.toFixed(2)}</td>
                   <td className="px-4 py-2">{p.receiptIssued ? '완료' : '미발행'}</td>

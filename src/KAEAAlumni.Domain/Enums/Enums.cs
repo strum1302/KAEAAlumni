@@ -36,7 +36,11 @@ public enum PaymentType
     MEMBERSHIP_FEE = 0,        // 연회비 ($100)
     DONATION = 1,
     EVENT_FEE = 2,
-    MEMBERSHIP_FEE_BOARD = 3   // 연회비+이사회비 ($200)
+    MEMBERSHIP_FEE_BOARD = 3,  // 연회비+이사회비 ($200)
+    // 연회비/이사회비/도네이션/행사비가 뒤섞여 있어 항목별로 나누기 어려운 과거(예전) 자료를
+    // 한 번에 일괄 등록할 때 쓰는 통합 항목. payment_type 컬럼은 VARCHAR라 새 값 추가에
+    // DB 스키마 변경은 필요 없다(HasConversion<string>()).
+    GENERAL = 4
 }
 
 // ── payments.payment_method ──────────────────────────────
