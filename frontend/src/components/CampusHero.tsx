@@ -14,6 +14,9 @@ import type { ReactNode } from 'react'
 // - 사진 로딩에 실패하면 그 칸의 로테이션에서만 조용히 제외됩니다.
 // - 사진이 하나도 없으면 기존 크림슨 그라데이션으로 자연스럽게 폴백합니다.
 // - 브라우저 탭이 백그라운드로 가면 전환을 멈추고, 시스템의 "모션 줄이기" 설정도 따릅니다.
+// - 배너 높이는 화면 세로 높이의 일정 비율(vh)로 잡되 min/max로 상하한을 둡니다.
+//   이렇게 하면 화면이 짧은 노트북에서도 배너가 화면 대부분을 차지하지 않아, 바로
+//   아래 "다가오는 주요 행사" 카드 윗부분이 스크롤 없이도 살짝 보입니다(Above the Fold).
 
 export interface CampusHeroImage {
   src: string
@@ -181,7 +184,7 @@ export default function CampusHero({
   normalized.forEach((img, i) => buckets[i % columns].push(img))
 
   return (
-    <section className={`relative overflow-hidden text-white min-h-[26rem] md:min-h-[34rem] ${className}`}>
+    <section className={`relative overflow-hidden text-white h-[42vh] min-h-[320px] max-h-[420px] md:h-[46vh] md:min-h-[380px] md:max-h-[480px] ${className}`}>
       <div className="absolute inset-0">
         {isDesktop ? (
           normalizedDesktop?.length ? (
@@ -198,7 +201,7 @@ export default function CampusHero({
         )}
       </div>
       <div className="absolute inset-0 bg-gradient-to-br from-black/70 to-black/40" />
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 py-16 md:py-20 space-y-4">
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 py-6 md:py-10 space-y-3">
         {children}
       </div>
     </section>
