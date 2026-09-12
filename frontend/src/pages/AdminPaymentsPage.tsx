@@ -110,7 +110,7 @@ export default function AdminPaymentsPage() {
               <SortableTh label="구분" active={sortKey === 'paymentType'} direction={direction} onClick={() => toggleSort('paymentType')} />
               <SortableTh label="금액" active={sortKey === 'amount'} direction={direction} onClick={() => toggleSort('amount')} />
               <th className="text-left px-4 py-2">납부수단/Ref#</th>
-              <th className="text-left px-4 py-2">세부목적/메모</th>
+              <th className="text-left px-4 py-2">납부일자/메모</th>
               <SortableTh label="영수증" active={sortKey === 'receiptIssued'} direction={direction} onClick={() => toggleSort('receiptIssued')} />
               {canManagePayments && <th className="text-left px-4 py-2">관리</th>}
             </tr>
