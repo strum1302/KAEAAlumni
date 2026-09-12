@@ -58,7 +58,6 @@ export default function EventDetailPage() {
       {/* 행사 헤더 */}
       <div>
         <h1 className="text-2xl font-bold text-gray-800 mb-1">{event.title}</h1>
-        {event.description && <p className="text-sm text-gray-600 mb-3">{event.description}</p>}
         <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-500">
           <span>일시: {format(new Date(event.eventDate), 'yyyy년 M월 d일 (EEE) HH:mm')}</span>
           <span>
@@ -77,6 +76,7 @@ export default function EventDetailPage() {
           <span>참가비: {event.fee > 0 ? `$${event.fee.toFixed(2)}` : '무료'}</span>
           <span>현재 신청: 총 {event.currentAttendees}명</span>
         </div>
+        {event.description && <p className="text-sm text-gray-600 mt-3">{event.description}</p>}
       </div>
 
       {/* 온라인 참가신청 버튼 - 버튼을 눌러야 신청서 모달이 열립니다 */}
