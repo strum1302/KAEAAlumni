@@ -225,7 +225,9 @@ function EventCard({
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+    <div className={`bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow border ${
+      isPast ? 'border-gray-200' : 'border-crimson/40'
+    }`}>
       <div className="flex gap-3">
         <div onClick={() => navigate(`/events/${ev.id}`)} className="cursor-pointer flex-1 min-w-0">
           <div className="flex items-center justify-between mb-2">
