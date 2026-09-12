@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
-import { membersApi, paymentsApi } from '../api'
+import { authApi, membersApi, paymentsApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import { useSort } from '../hooks/useSort'
 import Pagination from '../components/common/Pagination'
@@ -18,6 +18,7 @@ export default function ProfilePage() {
   const [paymentsPage, setPaymentsPage] = useState(1)
   const [changingPassword, setChangingPassword] = useState(false)
   const [pwSaving, setPwSaving] = useState(false)
+  const [resending, setResending] = useState(false)
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
   const [form, setForm] = useState({
     cellPhone: member?.cellPhone || '',
@@ -77,6 +78,18 @@ export default function ProfilePage() {
     }
   }
 
+  const handleResendVerification = async () => {
+    setResending(true)
+    try {
+      await authApi.resendVerification()
+      toast.success('인증 메일을 다시 보냈습니다.')
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || '인증 메일 재전송에 실패했습니다.')
+    } finally {
+      setResending(false)
+    }
+  }
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
     if (pwForm.newPassword !== pwForm.confirmPassword) {
@@ -119,7 +132,25 @@ export default function ProfilePage() {
         {!editing ? (
           <dl className="grid grid-cols-2 gap-y-3 text-sm">
             <dt className="text-gray-500">성명</dt><dd className="text-gray-800">{member.name}</dd>
-            <dt className="text-gray-500">이메일</dt><dd className="text-gray-800">{member.email}</dd>
+            <dt className="text-gray-500">이메일</dt>
+            <dd className="text-gray-800">
+              {member.email}
+              {member.emailVerified ? (
+                <span className="ml-2 text-xs text-green-600 font-medium">인증완료</span>
+              ) : (
+                <span className="ml-2 text-xs text-amber-600 font-medium">
+                  미인증 ·{' '}
+                  <button
+                    type="button"
+                    onClick={handleResendVerification}
+                    disabled={resending}
+                    className="underline hover:no-underline disabled:opacity-50"
+                  >
+                    {resending ? '전송 중...' : '인증 메일 재전송'}
+                  </button>
+                </span>
+              )}
+            </dd>
             <dt className="text-gray-500">휴대전화</dt><dd className="text-gray-800">{member.cellPhone}</dd>
             <dt className="text-gray-500">일반전화</dt><dd className="text-gray-800">{member.homePhone || '-'}</dd>
             <dt className="text-gray-500">주소</dt>

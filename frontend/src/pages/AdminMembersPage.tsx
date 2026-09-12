@@ -25,6 +25,7 @@ interface MemberRow {
   isActive: boolean
   photoUrl?: string | null
   createdAt: string
+  emailVerified: boolean
 }
 
 const ROLES: MemberRole[] = ['MEMBER', 'YT', 'OFFICER', 'ADMIN']
@@ -275,7 +276,14 @@ export default function AdminMembersPage() {
                     <span className="ml-1.5 text-[11px] text-red-400">(등록취소됨)</span>
                   )}
                 </td>
-                <td className="px-4 py-2 text-gray-500">{m.email}</td>
+                <td className="px-4 py-2 text-gray-500">
+                  {m.email}
+                  {!m.emailVerified && (
+                    <span className="ml-1 text-[10px] text-amber-500" title="이메일 미인증">
+                      (미인증)
+                    </span>
+                  )}
+                </td>
                 <td className="px-4 py-2 text-gray-500 whitespace-nowrap">{m.entryYear} {m.major}</td>
                 <td className="px-4 py-2 text-gray-500 whitespace-nowrap">{[m.city, m.state].filter(Boolean).join(', ') || '-'}</td>
                 <td className="px-4 py-2">

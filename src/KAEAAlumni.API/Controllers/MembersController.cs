@@ -30,7 +30,8 @@ public class MembersController : ControllerBase
             member.Id, member.Name, member.Email, member.EntryYear, member.Major,
             member.Degree, member.CellPhone, member.HomePhone, member.AddressLine1,
             member.AddressLine2, member.City, member.State, member.ZipCode,
-            member.Bio, member.Role.ToString(), member.OfficerTitle, member.PhotoUrl));
+            member.Bio, member.Role.ToString(), member.OfficerTitle, member.PhotoUrl,
+            member.EmailVerified));
     }
 
     // 내 정보 수정
@@ -86,7 +87,8 @@ public class MembersController : ControllerBase
             .Select(m => new
             {
                 m.Id, m.Name, m.Email, m.EntryYear, m.Major, m.Degree,
-                m.City, m.State, Role = m.Role.ToString(), m.OfficerTitle, m.IsActive, m.PhotoUrl, m.CreatedAt
+                m.City, m.State, Role = m.Role.ToString(), m.OfficerTitle, m.IsActive, m.PhotoUrl, m.CreatedAt,
+                m.EmailVerified
             });
         return Ok(result);
     }

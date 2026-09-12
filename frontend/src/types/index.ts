@@ -19,6 +19,7 @@ export interface Member {
   role: MemberRole
   officerTitle?: string
   photoUrl?: string | null
+  emailVerified: boolean
 }
 
 export interface Officer {
@@ -144,7 +145,7 @@ export interface PaymentSummary {
 
 // ── Email (발송 이력) ─────────────────────────────────────
 export type EmailTarget = 'ALL' | 'RSVP' | 'NOT_RSVP'
-export type EmailKind = 'EVENT_NOTIFY' | 'ARTICLE_NOTIFY' | 'SIGNUP_VERIFY' | 'PASSWORD_RESET' | 'MANUAL'
+export type EmailKind = 'EVENT_NOTIFY' | 'ARTICLE_NOTIFY' | 'SIGNUP_VERIFY' | 'NEW_MEMBER_ADMIN_NOTIFY' | 'PASSWORD_RESET' | 'MANUAL'
 
 export interface EmailBatch {
   id: string

@@ -8,10 +8,10 @@ import type { EmailBatch, EmailLog, PagedResult } from '../types'
 
 const PAGE_SIZE = 20
 
-const KIND_FILTERS = ['ALL', 'EVENT_NOTIFY', 'ARTICLE_NOTIFY', 'SIGNUP_VERIFY', 'PASSWORD_RESET', 'MANUAL'] as const
+const KIND_FILTERS = ['ALL', 'EVENT_NOTIFY', 'ARTICLE_NOTIFY', 'SIGNUP_VERIFY', 'NEW_MEMBER_ADMIN_NOTIFY', 'PASSWORD_RESET', 'MANUAL'] as const
 const KIND_LABELS: Record<string, string> = {
   EVENT_NOTIFY: '행사 공지', ARTICLE_NOTIFY: '게시글 알림', SIGNUP_VERIFY: '가입 인증',
-  PASSWORD_RESET: '비밀번호 재설정', MANUAL: '수동 발송',
+  NEW_MEMBER_ADMIN_NOTIFY: '신규가입 알림', PASSWORD_RESET: '비밀번호 재설정', MANUAL: '수동 발송',
 }
 const TARGET_LABELS: Record<string, string> = { ALL: '전체 회원', RSVP: '신청자만', NOT_RSVP: '미신청자만' }
 const STATUS_LABELS: Record<string, string> = {
@@ -50,7 +50,7 @@ export default function AdminEmailPage() {
     <div>
       <h1 className="text-2xl font-bold text-gray-800 mb-1">메일 발송 내역</h1>
       <p className="text-sm text-gray-500 mb-6">
-        행사 공지, 게시글 알림, 가입 인증, 비밀번호 재설정 등 시스템에서 나간 모든 메일의 발송 여부와 시각을 확인할 수 있습니다.
+        행사 공지, 게시글 알림, 가입 인증, 신규가입 관리자 알림, 비밀번호 재설정 등 시스템에서 나간 모든 메일의 발송 여부와 시각을 확인할 수 있습니다.
       </p>
 
       <div className="bg-white border border-gray-100 rounded-xl p-5 mb-6 inline-block">

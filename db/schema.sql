@@ -157,6 +157,12 @@ ALTER TABLE members ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT 
 -- (리사이즈 후) base64 data URL 형태로 그대로 저장합니다. NULL이면 사진 없음.
 ALTER TABLE members ADD COLUMN IF NOT EXISTS photo_url TEXT;
 
+-- 이메일 인증(참고용) — 인증하지 않아도 로그인/사이트 이용에는 제한이 없습니다.
+-- 가입 시 발송되는 인증 메일의 링크를 클릭하면 email_verified가 true로 바뀌고
+-- email_verification_token은 재사용 방지를 위해 비워집니다(NULL).
+ALTER TABLE members ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE members ADD COLUMN IF NOT EXISTS email_verification_token TEXT;
+
 -- 행사 장소의 구글맵 주소(또는 구글맵 링크). 관리자가 주소나 구글맵 URL을 직접 입력하면
 -- 프론트엔드에서 "지도에서 보기" 링크로 표시됩니다. NULL이면 지도 링크 없음(장소명만 표시).
 ALTER TABLE events ADD COLUMN IF NOT EXISTS google_maps_url TEXT;

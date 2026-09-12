@@ -46,6 +46,8 @@ export const authApi = {
   }) => api.post('/auth/register', data),
   login: (data: { email: string; password: string }) => api.post('/auth/login', data),
   me: () => api.get('/auth/me'),
+  verifyEmail: (token: string) => api.post('/auth/verify-email', { token }),
+  resendVerification: () => api.post('/auth/resend-verification'),
 }
 
 // ── Members API ───────────────────────────────────

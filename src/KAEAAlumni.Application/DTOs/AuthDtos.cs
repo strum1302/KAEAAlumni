@@ -46,10 +46,13 @@ public record MemberDto(
     string? Bio,
     string Role,
     string? OfficerTitle = null,
-    string? PhotoUrl = null
+    string? PhotoUrl = null,
+    bool EmailVerified = false
 );
 
 public record RefreshTokenDto(string RefreshToken);
+
+public record VerifyEmailDto(string Token);
 
 public record UpdateMemberRoleDto(string Role);
 

@@ -29,7 +29,7 @@ export default function JoinPage() {
         entryYear: Number(form.entryYear),
       })
       setAuth(data.member, data.accessToken, data.refreshToken)
-      toast.success('교우 명부 등록이 완료되었습니다. 환영합니다!')
+      toast.success('교우 명부 등록이 완료되었습니다. 환영합니다! 입력하신 이메일로 인증 메일을 보내드렸습니다.')
       navigate('/')
     } catch (err: any) {
       toast.error(err?.response?.data?.message || '등록에 실패했습니다.')

@@ -73,7 +73,8 @@ public enum EmailKind
     ARTICLE_NOTIFY = 1,
     SIGNUP_VERIFY = 2,
     PASSWORD_RESET = 3,
-    MANUAL = 4
+    MANUAL = 4,
+    NEW_MEMBER_ADMIN_NOTIFY = 5   // 신규 회원 가입 시 관리자/임원진에게 자동 발송
 }
 
 // ── 행사 공지 메일 발송 대상 (email_batches.target) ──────

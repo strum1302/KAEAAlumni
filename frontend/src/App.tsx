@@ -18,6 +18,7 @@ import AdminMembersPage from './pages/AdminMembersPage'
 import AdminEmailPage from './pages/AdminEmailPage'
 import LoginPage from './pages/LoginPage'
 import ProfilePage from './pages/ProfilePage'
+import VerifyEmailPage from './pages/VerifyEmailPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,6 +52,7 @@ export default function App() {
             <Route path="/community/:category" element={<CommunityPage />} />
             <Route path="/community/:category/:id" element={<ArticleDetailPage />} />
             <Route path="/join" element={<JoinPage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
             <Route path="/giving" element={<GivingPage />} />
             <Route path="/profile" element={
               <PrivateRoute><ProfilePage /></PrivateRoute>
