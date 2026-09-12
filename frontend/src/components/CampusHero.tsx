@@ -5,6 +5,10 @@ import type { ReactNode } from 'react'
 // - 사진이 세로로 긴 비율(예: 640x1138)이라 가로로 넓은 배너 한 칸을 object-cover로
 //   채우면 위아래가 심하게 잘리므로, 데스크톱에서는 세로 사진 여러 장을 나란히
 //   붙여서(기본 3분할) 보여주고, 모바일(md 미만)에서는 한 장씩 전체 화면으로 보여줍니다.
+// - desktopImages를 따로 넘기면, 데스크톱에서는 3분할 대신 그 사진들로 가로 배너
+//   한 장(전체 화면 크로스페이드)을 보여줍니다. 학교에서 받은 가로로 넓은 공식
+//   사진(분수대, 본관 전경, 정문 등)처럼 세로로 자르면 아쉬운 사진에 사용합니다.
+//   desktopImages가 없으면 기존처럼 images를 3분할로 보여줍니다.
 // - 각 칸은 독립적으로, 서로 다른 타이밍에 크로스페이드 전환됩니다(동시에 다 같이
 //   깜빡이지 않도록 칸마다 시작을 살짝 늦춤).
 // - 사진 로딩에 실패하면 그 칸의 로테이션에서만 조용히 제외됩니다.
@@ -21,9 +25,12 @@ type CampusHeroInput = string | CampusHeroImage
 
 interface CampusHeroProps {
   images: CampusHeroInput[]
+  // 지정하면 데스크톱에서 3분할 대신 이 사진들로 가로 배너 한 장을 보여줍니다
+  // (모바일은 계속 images를 한 장씩 보여줍니다). 가로로 넓은 사진에 사용하세요.
+  desktopImages?: CampusHeroInput[]
   className?: string
   children?: ReactNode
-  columns?: number // 데스크톱 분할 수 (기본 3)
+  columns?: number // 데스크톱 분할 수 (기본 3, desktopImages 지정 시 무시)
   intervalMs?: number // 칸별 전환 간격 (기본 4000ms)
 }
 
@@ -148,16 +155,17 @@ function HeroTile({
 }
 
 export default function CampusHero({
-  images, className = '', children, columns = 3, intervalMs = 4000,
+  images, desktopImages, className = '', children, columns = 3, intervalMs = 4000,
 }: CampusHeroProps) {
   const normalized = normalize(images)
+  const normalizedDesktop = desktopImages ? normalize(desktopImages) : null
   const reducedMotion = usePrefersReducedMotion()
   const visible = usePageVisible()
   const isDesktop = useIsDesktop()
   const paused = reducedMotion || !visible
 
   // 사진이 하나도 없으면 기존 크림슨 그라데이션으로 폴백합니다.
-  if (!normalized.length) {
+  if (!normalized.length && !normalizedDesktop?.length) {
     return (
       <section className={`relative overflow-hidden bg-crimson text-white ${className}`}>
         <div className="absolute inset-0 bg-gradient-to-br from-black/70 to-black/40" />
@@ -176,11 +184,15 @@ export default function CampusHero({
     <section className={`relative overflow-hidden text-white min-h-[26rem] md:min-h-[34rem] ${className}`}>
       <div className="absolute inset-0">
         {isDesktop ? (
-          <div className="grid h-full w-full gap-0.5" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
-            {buckets.map((bucket, col) => (
-              <HeroTile key={col} images={bucket} intervalMs={intervalMs} delayMs={(intervalMs / columns) * col} paused={paused} />
-            ))}
-          </div>
+          normalizedDesktop?.length ? (
+            <HeroTile images={normalizedDesktop} intervalMs={intervalMs} delayMs={0} paused={paused} />
+          ) : (
+            <div className="grid h-full w-full gap-0.5" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+              {buckets.map((bucket, col) => (
+                <HeroTile key={col} images={bucket} intervalMs={intervalMs} delayMs={(intervalMs / columns) * col} paused={paused} />
+              ))}
+            </div>
+          )
         ) : (
           <HeroTile images={normalized} intervalMs={intervalMs} delayMs={0} paused={paused} />
         )}

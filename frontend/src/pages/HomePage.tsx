@@ -11,8 +11,17 @@ import type { EventList, ArticleList, GalleryItem, PagedResult } from '../types'
 // 히어로에 쓸 캠퍼스 사진 9장 (사계절 + 응원전 분위기가 고루 섞이도록 27장 중 선별).
 // 나머지 사진들은 public/images/hero/에 그대로 남아있으니, 나중에 갤러리 "고려대 캠퍼스"
 // 항목으로 옮기고 싶으면 그쪽에서 재사용할 수 있습니다.
+// 모바일에서는 화면을 3분할하지 않고 한 장씩 크게 보여주므로, 세로로 긴 이 사진들이
+// 계속 쓰입니다.
 const HERO_IMAGES = [1, 2, 3, 4, 7, 9, 12, 22, 26].map(
   (n) => `/images/hero/hero-${String(n).padStart(2, '0')}.jpg`
+)
+
+// 데스크톱 전용 히어로 사진 - 학교에서 받은 가로로 넓은 공식 사진 9장(분수대, 본관,
+// 정문, 항공뷰 등). 세로 사진 3분할 대신 화면 전체를 채우는 가로 배너 한 장으로
+// 보여줘야 잘리지 않고 예쁘게 나와서, 위 HERO_IMAGES와 별도로 관리합니다.
+const HERO_IMAGES_DESKTOP = Array.from({ length: 9 }, (_, i) =>
+  `/images/hero-wide/hero-wide-${String(i + 1).padStart(2, '0')}.jpg`
 )
 
 export default function HomePage() {
@@ -63,7 +72,7 @@ export default function HomePage() {
   return (
     <div className="space-y-12">
       {/* 히어로 배너 - 캠퍼스 사진 슬라이드쇼 */}
-      <CampusHero images={HERO_IMAGES}>
+      <CampusHero images={HERO_IMAGES} desktopImages={HERO_IMAGES_DESKTOP}>
         <p className="text-crimson-50/90 text-sm tracking-wide">KU CHICAGO — MIDWEST ALUMNI ASSOCIATION</p>
         <h1 className="text-2xl md:text-4xl font-bold leading-snug">
           자유·정의·진리, 시카고에 울려 퍼지는 호랑이의 기상
