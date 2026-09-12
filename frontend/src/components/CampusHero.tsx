@@ -197,7 +197,7 @@ export default function CampusHero({
           <HeroTile images={normalized} intervalMs={intervalMs} delayMs={0} paused={paused} />
         )}
       </div>
-      <div className="absolute inset-0 bg-gradient-to-br from-black/50 to-black/20" />
+      <div className="absolute inset-0 bg-gradient-to-br from-black/70 to-black/40" />
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 py-16 md:py-20 space-y-4">
         {children}
       </div>

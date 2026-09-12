@@ -20,9 +20,12 @@ const HERO_IMAGES = [1, 2, 3, 4, 7, 9, 12, 22, 26].map(
 // 데스크톱 전용 히어로 사진 - 학교에서 받은 가로로 넓은 공식 사진 9장(분수대, 본관,
 // 정문, 항공뷰 등). 세로 사진 3분할 대신 화면 전체를 채우는 가로 배너 한 장으로
 // 보여줘야 잘리지 않고 예쁘게 나와서, 위 HERO_IMAGES와 별도로 관리합니다.
-const HERO_IMAGES_DESKTOP = Array.from({ length: 9 }, (_, i) =>
-  `/images/hero-wide/hero-wide-${String(i + 1).padStart(2, '0')}.jpg`
-)
+// 2번째 사진(잔디밭 넓게 나온 컷)은 기본(가운데) 크롭이면 본관이 위쪽에서 잘려서
+// position: 'top'으로 위쪽을 기준으로 자르도록 지정했습니다.
+const HERO_IMAGES_DESKTOP = Array.from({ length: 9 }, (_, i) => ({
+  src: `/images/hero-wide/hero-wide-${String(i + 1).padStart(2, '0')}.jpg`,
+  ...(i === 1 ? { position: 'top' as const } : {}),
+}))
 
 export default function HomePage() {
   const [selectedMedia, setSelectedMedia] = useState<GalleryItem | null>(null)
@@ -79,10 +82,10 @@ export default function HomePage() {
         </h1>
         <p className="text-crimson-50/90">1950년대부터 이어져 온 일리노이 및 미중서부 고대인의 네트워크</p>
         <div className="flex flex-wrap justify-center gap-3 pt-2">
-          <Link to="/events" className="bg-white text-crimson font-semibold px-5 py-2.5 rounded-lg hover:bg-crimson-50 transition-colors">
+          <Link to="/events" className="bg-crimson text-white font-semibold px-5 py-2.5 rounded-lg shadow-sm hover:bg-crimson-800 transition-colors">
             다가오는 행사 보기
           </Link>
-          <Link to="/join" className="border border-white/70 font-semibold px-5 py-2.5 rounded-lg hover:bg-white/10 transition-colors">
+          <Link to="/join" className="border-2 border-white text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-white/10 transition-colors">
             신입 교우 등록
           </Link>
         </div>
