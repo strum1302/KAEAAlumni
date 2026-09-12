@@ -198,7 +198,7 @@ export default function CampusHero({
         )}
       </div>
       <div className="absolute inset-0 bg-gradient-to-br from-black/50 to-black/20" />
-      <div className="relative flex flex-col items-center justify-center text-center h-full px-6 py-16 md:py-20 space-y-4">
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 py-16 md:py-20 space-y-4">
         {children}
       </div>
     </section>
