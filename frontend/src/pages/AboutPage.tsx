@@ -108,23 +108,33 @@ export default function AboutPage() {
         subtitle="1950년대부터 이어져 온 미중서부 고대인의 요람"
       />
       <section>
-        {president?.photoUrl && (
-          <div className="flex justify-center mb-4">
-            <img
-              src={president.photoUrl}
-              alt={president.name}
-              className="max-w-full h-auto rounded-lg border border-gray-100"
-            />
+        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
+          <h2 className="font-bold text-crimson mb-4">회장 인사말</h2>
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+            {president?.photoUrl && (
+              <div className="w-[200px] h-[250px] rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <img
+                  src={president.photoUrl}
+                  alt={president.name}
+                  className="max-w-full max-h-full object-contain"
+                />
+              </div>
+            )}
+            <div className="flex-1 w-full space-y-3 text-center md:text-left">
+              {president && (
+                <div>
+                  <p className="text-sm font-bold text-gray-900">{president.name} 회장</p>
+                  <p className="text-xs text-gray-500">{president.entryYear}학번 · {president.major}</p>
+                </div>
+              )}
+              <p className="text-sm text-gray-600 leading-relaxed">
+                안녕하십니까, 고려대학교 미중서부 교우회 회장입니다. 1950년대부터 이어져 온 일리노이 및
+                미중서부 지역 고대인의 네트워크를 소중히 이어가며, 후배 교우들의 정착과 교류를 돕고
+                후원 활동을 통해 다음 세대를 지원하고자 합니다. 자유·정의·진리의 정신으로 시카고에서
+                만나뵙겠습니다.
+              </p>
+            </div>
           </div>
-        )}
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-3">
-          <h2 className="font-bold text-crimson">회장 인사말</h2>
-          <p className="text-sm text-gray-600 leading-relaxed">
-            안녕하십니까, 고려대학교 미중서부 교우회 회장입니다. 1950년대부터 이어져 온 일리노이 및
-            미중서부 지역 고대인의 네트워크를 소중히 이어가며, 후배 교우들의 정착과 교류를 돕고
-            후원 활동을 통해 다음 세대를 지원하고자 합니다. 자유·정의·진리의 정신으로 시카고에서
-            만나뵙겠습니다.
-          </p>
         </div>
       </section>
 
