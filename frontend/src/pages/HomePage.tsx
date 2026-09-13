@@ -82,10 +82,10 @@ export default function HomePage() {
         </h1>
         <p className="text-crimson-50/90">1950년대부터 이어져 온 일리노이 및 미중서부 고대인의 네트워크</p>
         <div className="flex flex-wrap justify-center gap-3 pt-2">
-          <Link to="/events" className="bg-crimson text-white font-semibold px-5 py-2.5 rounded-lg shadow-sm hover:bg-crimson-800 transition-colors">
+          <Link to="/events" className="border-2 border-white text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-white/10 transition-colors">
             다가오는 행사 보기
           </Link>
-          <Link to="/join" className="border-2 border-white text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-white/10 transition-colors">
+          <Link to="/join" className="bg-crimson text-white font-semibold px-5 py-2.5 rounded-lg shadow-sm hover:bg-crimson-800 transition-colors">
             신입 교우 등록
           </Link>
         </div>
