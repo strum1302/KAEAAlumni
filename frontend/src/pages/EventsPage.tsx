@@ -228,18 +228,38 @@ function EventCard({
     }
   }
 
+  const eventDate = new Date(ev.eventDate)
+
   return (
-    <div className={`bg-white rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow border ${
-      isPast ? 'border-gray-200' : 'border-crimson/40'
+    <div className={`rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow border ${
+      isPast ? 'bg-gray-50 border-gray-200' : 'bg-white border-crimson/40'
     }`}>
       <div className="flex gap-3">
         <div onClick={() => navigate(`/events/${ev.id}`)} className="cursor-pointer flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="font-bold text-gray-800">{ev.title}</h2>
+          <div className="flex items-center justify-between mb-2 gap-2">
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+              isPast ? 'bg-gray-200 text-gray-500' : 'bg-crimson-50 text-crimson'
+            }`}>
+              {isPast ? '종료' : '신청 접수중'}
+            </span>
             {!ev.isActive && <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">비활성</span>}
           </div>
-          <p className="text-sm text-gray-500">일시: {format(new Date(ev.eventDate), 'yyyy.MM.dd (EEE) HH:mm')}</p>
-          <p className="text-sm text-gray-500">
+
+          <div className="flex gap-3">
+            {/* 미니 달력 뱃지 - 월/일을 숫자로 강조해서 한눈에 일정을 파악할 수 있게 */}
+            <div className={`flex flex-col items-center justify-center w-12 h-12 rounded-lg flex-shrink-0 ${
+              isPast ? 'bg-gray-200 text-gray-500' : 'bg-crimson-50 text-crimson'
+            }`}>
+              <span className="text-[9px] font-bold uppercase leading-none">{format(eventDate, 'MMM')}</span>
+              <span className="text-base font-extrabold leading-none mt-0.5">{format(eventDate, 'd')}</span>
+            </div>
+            <div className="min-w-0">
+              <h2 className="font-bold text-gray-800">{ev.title}</h2>
+              <p className="text-sm text-gray-500">{format(eventDate, 'yyyy년 (EEE) HH:mm')}</p>
+            </div>
+          </div>
+
+          <p className="text-sm text-gray-500 mt-2">
             장소: {ev.location}
             {ev.googleMapsUrl && (
               <a
@@ -279,28 +299,41 @@ function EventCard({
           </button>
         )}
       </div>
-      {canManage && (
-        isPast ? (
-          <p className="text-right text-xs text-gray-400 mt-2 pt-2 border-t border-gray-50">
-            이미 지난 행사는 수정/삭제할 수 없습니다.
-          </p>
-        ) : (
-          <div className="flex justify-end gap-3 mt-2 pt-2 border-t border-gray-50">
-            <button
-              onClick={() => onEdit(ev)}
-              className="text-xs text-crimson hover:text-crimson-800"
-            >
-              수정
-            </button>
-            <button
-              onClick={() => onDelete(ev)}
-              disabled={deletingId === ev.id}
-              className="text-xs text-red-500 hover:text-red-600 disabled:opacity-50"
-            >
-              {deletingId === ev.id ? '삭제 중...' : '삭제'}
-            </button>
+
+      {(canManage || !isPast) && (
+        <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-gray-100">
+          <div>
+            {canManage && (
+              isPast ? (
+                <p className="text-xs text-gray-400">이미 지난 행사는 수정/삭제할 수 없습니다.</p>
+              ) : (
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => onEdit(ev)}
+                    className="text-xs text-crimson hover:text-crimson-800"
+                  >
+                    수정
+                  </button>
+                  <button
+                    onClick={() => onDelete(ev)}
+                    disabled={deletingId === ev.id}
+                    className="text-xs text-red-500 hover:text-red-600 disabled:opacity-50"
+                  >
+                    {deletingId === ev.id ? '삭제 중...' : '삭제'}
+                  </button>
+                </div>
+              )
+            )}
           </div>
-        )
+          {!isPast && (
+            <button
+              onClick={() => navigate(`/events/${ev.id}`)}
+              className="text-xs font-semibold text-white bg-crimson rounded-full px-4 py-1.5 hover:bg-crimson-800 transition-colors whitespace-nowrap"
+            >
+              참가 신청 (RSVP) 바로가기 &gt;
+            </button>
+          )}
+        </div>
       )}
     </div>
   )
