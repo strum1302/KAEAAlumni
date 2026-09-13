@@ -20,16 +20,16 @@ function objectPositionClass(position?: SubPageBannerProps['position']) {
 
 export default function SubPageBanner({ image, position, title, subtitle }: SubPageBannerProps) {
   return (
-    <div className="relative overflow-hidden rounded-2xl mb-6 flex flex-col min-h-[9rem] md:min-h-[11rem]">
+    <div className="relative overflow-hidden rounded-2xl mb-6 flex flex-col min-h-[6rem] md:min-h-[11rem]">
       <img
         src={image}
         alt=""
         className={`absolute inset-0 w-full h-full object-cover ${objectPositionClass(position)}`}
       />
       <div className="absolute inset-0 bg-gradient-to-br from-crimson-900/85 to-crimson-700/70" />
-      <div className="relative flex-1 flex flex-col items-center justify-center text-center text-white px-4 py-5">
-        <h1 className="text-xl md:text-2xl font-extrabold tracking-tight">{title}</h1>
-        {subtitle && <p className="text-xs md:text-sm text-crimson-50/90 mt-1">{subtitle}</p>}
+      <div className="relative flex-1 flex flex-col items-center justify-center text-center text-white px-4 py-2.5 md:py-5">
+        <h1 className="text-base md:text-2xl font-extrabold tracking-tight">{title}</h1>
+        {subtitle && <p className="text-[11px] md:text-sm text-crimson-50/90 mt-0.5 md:mt-1">{subtitle}</p>}
       </div>
     </div>
   )
