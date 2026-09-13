@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import { articlesApi, membersApi, galleryApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import { getVideoEmbedUrl, getVideoThumbnail } from '../utils/youtube'
+import SubPageBanner from '../components/SubPageBanner'
 import type { ArticleDetail, ArticleList, GalleryItem, Officer, PagedResult } from '../types'
 
 const HISTORY_TITLE = '교우회 연혁'
@@ -101,8 +102,12 @@ export default function AboutPage() {
 
   return (
     <div className="space-y-10">
+      <SubPageBanner
+        image="/images/hero-wide/hero-wide-03.jpg"
+        title="교우회 소개"
+        subtitle="1950년대부터 이어져 온 미중서부 고대인의 요람"
+      />
       <section>
-        <h1 className="text-2xl font-bold text-gray-800 mb-3">교우회 소개</h1>
         {president?.photoUrl && (
           <div className="flex justify-center mb-4">
             <img

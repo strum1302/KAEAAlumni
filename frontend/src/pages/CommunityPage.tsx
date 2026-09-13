@@ -7,6 +7,7 @@ import { articlesApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import { fileToResizedDataUrl } from '../utils/image'
 import Pagination from '../components/common/Pagination'
+import SubPageBanner from '../components/SubPageBanner'
 import type { ArticleCategory, ArticleList, PagedResult } from '../types'
 
 type TabKey = ArticleCategory | 'ALL'
@@ -94,7 +95,12 @@ export default function CommunityPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-800 mb-4">게시판</h1>
+      <SubPageBanner
+        image="/images/hero-wide/hero-wide-06.jpg"
+        position="bottom"
+        title="게시판"
+        subtitle="공지사항 및 미중서부 교우 소식"
+      />
 
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div className="flex gap-2">

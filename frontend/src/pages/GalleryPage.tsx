@@ -8,6 +8,7 @@ import { useAuthStore } from '../store/authStore'
 import { getVideoEmbedUrl, getVideoThumbnail } from '../utils/youtube'
 import { fileToResizedDataUrl } from '../utils/image'
 import Pagination from '../components/common/Pagination'
+import SubPageBanner from '../components/SubPageBanner'
 import type { EventList, GalleryItem, PagedResult } from '../types'
 
 const PAGE_SIZE = 16
@@ -105,16 +106,19 @@ export default function GalleryPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-1">
-        <h1 className="text-2xl font-bold text-gray-800">미디어 갤러리</h1>
-        {canManage && (
+      <SubPageBanner
+        image="/images/hero-wide/hero-wide-07.jpg"
+        title="미디어 갤러리"
+        subtitle="교우회 주요 행사 현장의 사진과 영상 기록"
+      />
+      {canManage && (
+        <div className="flex justify-end mb-4">
           <button onClick={() => setShowAdd(true)}
             className="text-sm text-white bg-crimson font-medium rounded-lg px-4 py-2 hover:bg-crimson-800">
             + 미디어 등록
           </button>
-        )}
-      </div>
-      <p className="text-sm text-gray-500 mb-4">행사 사진, 학교 캠퍼스 사진, 교가 &middot; 응원가 아카이브</p>
+        </div>
+      )}
 
       <div className="flex gap-2 flex-wrap mb-3">
         {(['ALL', 'EVENT', 'CAMPUS', 'SCHOOL_SONG'] as const).map((s) => (

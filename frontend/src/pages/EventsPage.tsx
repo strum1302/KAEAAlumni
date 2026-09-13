@@ -7,6 +7,7 @@ import { eventsApi, galleryApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import { getGoogleMapsLink } from '../utils/maps'
 import Pagination from '../components/common/Pagination'
+import SubPageBanner from '../components/SubPageBanner'
 import type { EventDetail, EventList, GalleryItem, PagedResult } from '../types'
 
 const PAGE_SIZE = 12
@@ -76,16 +77,19 @@ export default function EventsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-1">
-        <h1 className="text-2xl font-bold text-gray-800">행사 및 모임</h1>
-        {canManage && (
+      <SubPageBanner
+        image="/images/hero-wide/hero-wide-01.jpg"
+        title="행사 및 모임"
+        subtitle="총장배 골프대회, 고연전, 야유회, 송년회 등 연간 행사 일정"
+      />
+      {canManage && (
+        <div className="flex justify-end mb-4">
           <button onClick={() => setShowAdd(true)}
             className="text-sm text-white bg-crimson font-medium rounded-lg px-4 py-2 hover:bg-crimson-800">
             + 행사 등록
           </button>
-        )}
-      </div>
-      <p className="text-sm text-gray-500 mb-4">연간 행사 일정 — 총장배 골프대회, 고연전, 야유회, 송년회 등</p>
+        </div>
+      )}
 
       <div className="mb-6">
         <select
