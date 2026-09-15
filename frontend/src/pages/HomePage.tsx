@@ -142,7 +142,7 @@ export default function HomePage() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {recentEvents?.items.map((ev) => (
-            <EventPreviewCard key={ev.id} ev={ev} ctaLabel="자세히 보기" />
+            <EventPreviewCard key={ev.id} ev={ev} isPast />
           ))}
           {!recentEvents?.items.length && (
             <p className="text-sm text-gray-400 col-span-3">등록된 행사가 없습니다.</p>
@@ -158,7 +158,7 @@ export default function HomePage() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {upcomingEvents?.items.map((ev) => (
-            <EventPreviewCard key={ev.id} ev={ev} ctaLabel="참가 신청 (RSVP)" />
+            <EventPreviewCard key={ev.id} ev={ev} isPast={false} />
           ))}
           {!upcomingEvents?.items.length && (
             <p className="text-sm text-gray-400 col-span-3">예정된 행사가 없습니다.</p>
@@ -208,13 +208,36 @@ export default function HomePage() {
 }
 
 // 홈 화면 "최근 행사" / "다가오는 행사" 위젯에서 공통으로 쓰는 행사 미리보기 카드.
-// ctaLabel만 다르게 넘겨서 지난 행사는 "자세히 보기", 예정된 행사는 "참가 신청 (RSVP)"로 표시합니다.
-function EventPreviewCard({ ev, ctaLabel }: { ev: EventList; ctaLabel: string }) {
+// /events 페이지의 카드와 같은 톤(예정/종료 뱃지, 미니 달력 날짜 배지)으로 통일해서,
+// 홈에서 보던 카드와 행사 목록 페이지의 카드가 서로 다르게 느껴지지 않도록 합니다.
+function EventPreviewCard({ ev, isPast }: { ev: EventList; isPast: boolean }) {
+  const eventDate = new Date(ev.eventDate)
+
   return (
-    <div className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
-      <h3 className="font-bold text-gray-800 mb-2">{ev.title}</h3>
-      <p className="text-sm text-gray-500">일시: {format(new Date(ev.eventDate), 'yyyy.MM.dd (EEE) HH:mm')}</p>
-      <p className="text-sm text-gray-500 mb-3">
+    <div className={`rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow border ${
+      isPast ? 'bg-gray-50 border-gray-200' : 'bg-white border-crimson/40'
+    }`}>
+      <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full mb-2 ${
+        isPast ? 'bg-gray-200 text-gray-500' : 'bg-crimson-50 text-crimson'
+      }`}>
+        {isPast ? '종료' : '신청 접수중'}
+      </span>
+
+      <div className="flex gap-3">
+        {/* 미니 달력 뱃지 - /events 페이지와 동일하게 월/일을 숫자로 강조 */}
+        <div className={`flex flex-col items-center justify-center w-11 h-11 rounded-lg flex-shrink-0 ${
+          isPast ? 'bg-gray-200 text-gray-500' : 'bg-crimson-50 text-crimson'
+        }`}>
+          <span className="text-[8px] font-bold uppercase leading-none">{format(eventDate, 'MMM')}</span>
+          <span className="text-sm font-extrabold leading-none mt-0.5">{format(eventDate, 'd')}</span>
+        </div>
+        <div className="min-w-0">
+          <h3 className="font-bold text-gray-800">{ev.title}</h3>
+          <p className="text-sm text-gray-500">{format(eventDate, 'yyyy년 (EEE) HH:mm')}</p>
+        </div>
+      </div>
+
+      <p className="text-sm text-gray-500 mt-2 mb-3">
         장소: {ev.location}
         {ev.googleMapsUrl && (
           <a
@@ -227,9 +250,19 @@ function EventPreviewCard({ ev, ctaLabel }: { ev: EventList; ctaLabel: string })
           </a>
         )}
       </p>
-      <Link to={`/events/${ev.id}`} className="text-sm text-crimson font-medium hover:underline">
-        {ctaLabel} &gt;
-      </Link>
+
+      {isPast ? (
+        <Link to={`/events/${ev.id}`} className="text-sm text-crimson font-medium hover:underline">
+          자세히 보기 &gt;
+        </Link>
+      ) : (
+        <Link
+          to={`/events/${ev.id}`}
+          className="inline-block text-xs font-semibold text-white bg-crimson rounded-full px-4 py-1.5 hover:bg-crimson-800 transition-colors"
+        >
+          참가 신청 (RSVP) 바로가기 &gt;
+        </Link>
+      )}
     </div>
   )
 }
