@@ -68,7 +68,7 @@ public class EventRepository : Repository<Event>, IEventRepository
     public EventRepository(AppDbContext db) : base(db) { }
 
     public async Task<(List<Event> Events, int Total)> GetPagedAsync(
-        bool? upcomingOnly, int page, int pageSize, int? year = null)
+        bool? upcomingOnly, int page, int pageSize, int? year = null, bool? recentOnly = null)
     {
         var query = _db.Events.Include(e => e.Rsvps).AsQueryable();
 
@@ -77,6 +77,12 @@ public class EventRepository : Repository<Event>, IEventRepository
             query = query.Where(e => e.EventDate >= DateTime.UtcNow && e.IsActive);
             // 다가오는 행사는 가까운 날짜순(오름차순)으로 보여줍니다.
             query = query.OrderBy(e => e.EventDate);
+        }
+        else if (recentOnly == true)
+        {
+            // 홈 화면 "최근 행사" 위젯 - 이미 지난 행사만, 가장 최근에 열린 순서(내림차순)로.
+            query = query.Where(e => e.EventDate < DateTime.UtcNow && e.IsActive);
+            query = query.OrderByDescending(e => e.EventDate);
         }
         else
         {

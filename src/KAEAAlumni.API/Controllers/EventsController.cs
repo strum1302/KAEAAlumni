@@ -39,11 +39,12 @@ public class EventsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetEvents(
         [FromQuery] bool? upcomingOnly,
+        [FromQuery] bool? recentOnly,
         [FromQuery] int? year,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        var (events, total) = await _eventRepo.GetPagedAsync(upcomingOnly, page, pageSize, year);
+        var (events, total) = await _eventRepo.GetPagedAsync(upcomingOnly, page, pageSize, year, recentOnly);
         var items = events.Select(e => new EventListDto(
             e.Id, e.Title, e.EventDate, e.Location, e.Fee, e.MaxAttendees,
             e.Rsvps?.Sum(r => 1 + r.AdditionalGuests) ?? 0, e.IsActive, e.GoogleMapsUrl

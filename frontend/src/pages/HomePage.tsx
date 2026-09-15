@@ -45,8 +45,8 @@ export default function HomePage() {
   }
 
   const { data: events } = useQuery({
-    queryKey: ['events', 'upcoming'],
-    queryFn: async () => (await eventsApi.getList({ upcomingOnly: true, pageSize: 3 })).data as PagedResult<EventList>,
+    queryKey: ['events', 'recent'],
+    queryFn: async () => (await eventsApi.getList({ recentOnly: true, pageSize: 3 })).data as PagedResult<EventList>,
   })
 
   const { data: notices } = useQuery({
@@ -91,10 +91,48 @@ export default function HomePage() {
         </div>
       </CampusHero>
 
-      {/* 다가오는 주요 행사 */}
+      {/* 공지사항 & 우리 이야기 */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-bold text-gray-800">공지사항</h2>
+            <Link to="/community/notice" className="text-sm text-crimson hover:underline">더보기</Link>
+          </div>
+          <ul className="divide-y divide-gray-100 bg-white rounded-xl border border-gray-200 shadow-sm">
+            {notices?.items.map((a) => (
+              <li key={a.id}>
+                <Link to={`/community/notice/${a.id}`} className="flex items-center justify-between gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-crimson-50">
+                  <span className="truncate">{a.title}</span>
+                  <span className="text-xs text-gray-400 shrink-0">{a.authorName}</span>
+                </Link>
+              </li>
+            ))}
+            {!notices?.items.length && <li className="px-4 py-3 text-sm text-gray-400">공지사항이 없습니다.</li>}
+          </ul>
+        </div>
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-bold text-gray-800">우리 이야기 (교우 소식)</h2>
+            <Link to="/community/story" className="text-sm text-crimson hover:underline">더보기</Link>
+          </div>
+          <ul className="divide-y divide-gray-100 bg-white rounded-xl border border-gray-200 shadow-sm">
+            {stories?.items.map((a) => (
+              <li key={a.id}>
+                <Link to={`/community/story/${a.id}`} className="flex items-center justify-between gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-crimson-50">
+                  <span className="truncate">{a.title}</span>
+                  <span className="text-xs text-gray-400 shrink-0">{a.authorName}</span>
+                </Link>
+              </li>
+            ))}
+            {!stories?.items.length && <li className="px-4 py-3 text-sm text-gray-400">등록된 이야기가 없습니다.</li>}
+          </ul>
+        </div>
+      </section>
+
+      {/* 최근 행사 */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-800">다가오는 주요 행사</h2>
+          <h2 className="text-xl font-bold text-gray-800">최근 행사</h2>
           <Link to="/events" className="text-sm text-crimson font-medium hover:underline">전체 일정 &rarr;</Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -116,12 +154,12 @@ export default function HomePage() {
                 )}
               </p>
               <Link to={`/events/${ev.id}`} className="text-sm text-crimson font-medium hover:underline">
-                참가 신청 (RSVP) &gt;
+                자세히 보기 &gt;
               </Link>
             </div>
           ))}
           {!events?.items.length && (
-            <p className="text-sm text-gray-400 col-span-3">예정된 행사가 없습니다.</p>
+            <p className="text-sm text-gray-400 col-span-3">등록된 행사가 없습니다.</p>
           )}
         </div>
       </section>
@@ -163,44 +201,6 @@ export default function HomePage() {
           </div>
         </div>
       )}
-
-      {/* 공지사항 & 우리 이야기 */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-gray-800">공지사항</h2>
-            <Link to="/community/notice" className="text-sm text-crimson hover:underline">더보기</Link>
-          </div>
-          <ul className="divide-y divide-gray-100 bg-white rounded-xl border border-gray-200 shadow-sm">
-            {notices?.items.map((a) => (
-              <li key={a.id}>
-                <Link to={`/community/notice/${a.id}`} className="flex items-center justify-between gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-crimson-50">
-                  <span className="truncate">{a.title}</span>
-                  <span className="text-xs text-gray-400 shrink-0">{a.authorName}</span>
-                </Link>
-              </li>
-            ))}
-            {!notices?.items.length && <li className="px-4 py-3 text-sm text-gray-400">공지사항이 없습니다.</li>}
-          </ul>
-        </div>
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-gray-800">우리 이야기 (교우 소식)</h2>
-            <Link to="/community/story" className="text-sm text-crimson hover:underline">더보기</Link>
-          </div>
-          <ul className="divide-y divide-gray-100 bg-white rounded-xl border border-gray-200 shadow-sm">
-            {stories?.items.map((a) => (
-              <li key={a.id}>
-                <Link to={`/community/story/${a.id}`} className="flex items-center justify-between gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-crimson-50">
-                  <span className="truncate">{a.title}</span>
-                  <span className="text-xs text-gray-400 shrink-0">{a.authorName}</span>
-                </Link>
-              </li>
-            ))}
-            {!stories?.items.length && <li className="px-4 py-3 text-sm text-gray-400">등록된 이야기가 없습니다.</li>}
-          </ul>
-        </div>
-      </section>
     </div>
   )
 }

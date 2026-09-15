@@ -24,7 +24,7 @@ public interface IMemberRepository : IRepository<Domain.Entities.Member>
 public interface IEventRepository : IRepository<Domain.Entities.Event>
 {
     Task<(List<Domain.Entities.Event> Events, int Total)> GetPagedAsync(
-        bool? upcomingOnly, int page, int pageSize, int? year = null);
+        bool? upcomingOnly, int page, int pageSize, int? year = null, bool? recentOnly = null);
     Task<Domain.Entities.Event?> GetWithDetailsAsync(Guid id);
     Task<List<int>> GetDistinctYearsAsync();
 }

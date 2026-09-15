@@ -67,7 +67,7 @@ export const membersApi = {
 
 // ── Events API ────────────────────────────────────
 export const eventsApi = {
-  getList: (params?: { upcomingOnly?: boolean; year?: number; page?: number; pageSize?: number }) =>
+  getList: (params?: { upcomingOnly?: boolean; recentOnly?: boolean; year?: number; page?: number; pageSize?: number }) =>
     api.get('/events', { params }),
   getYears: () => api.get('/events/years'),
   getById: (id: string) => api.get(`/events/${id}`),
