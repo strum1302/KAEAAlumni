@@ -54,6 +54,14 @@ export default function HomePage() {
     queryFn: async () => (await eventsApi.getList({ upcomingOnly: true, pageSize: 3 })).data as PagedResult<EventList>,
   })
 
+  // "최근 및 다가오는 행사" - 두 목록을 합쳐서 지금 시각에 가장 가까운 순(과거/미래 상관없이)
+  // 으로 정렬한 뒤 3개만 보여줍니다. 예: 다가오는 행사가 며칠 안 남았으면 그게 먼저 나오고,
+  // 나머지는 최근에 열렸던 행사로 채워집니다.
+  const now = Date.now()
+  const nearbyEvents = [...(recentEvents?.items ?? []), ...(upcomingEvents?.items ?? [])]
+    .sort((a, b) => Math.abs(new Date(a.eventDate).getTime() - now) - Math.abs(new Date(b.eventDate).getTime() - now))
+    .slice(0, 3)
+
   const { data: notices } = useQuery({
     queryKey: ['articles', 'NOTICE'],
     queryFn: async () => (await articlesApi.getList({ category: 'NOTICE', pageSize: 3 })).data as PagedResult<ArticleList>,
@@ -134,34 +142,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 최근 행사 */}
+      {/* 최근 및 다가오는 행사 */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-800">최근 행사</h2>
+          <h2 className="text-xl font-bold text-gray-800">최근 및 다가오는 행사</h2>
           <Link to="/events" className="text-sm text-crimson font-medium hover:underline">전체 일정 &rarr;</Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {recentEvents?.items.map((ev) => (
-            <EventPreviewCard key={ev.id} ev={ev} isPast />
+          {nearbyEvents.map((ev) => (
+            <EventPreviewCard key={ev.id} ev={ev} isPast={new Date(ev.eventDate).getTime() < now} />
           ))}
-          {!recentEvents?.items.length && (
+          {!nearbyEvents.length && (
             <p className="text-sm text-gray-400 col-span-3">등록된 행사가 없습니다.</p>
-          )}
-        </div>
-      </section>
-
-      {/* 다가오는 행사 */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-800">다가오는 행사</h2>
-          <Link to="/events" className="text-sm text-crimson font-medium hover:underline">전체 일정 &rarr;</Link>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {upcomingEvents?.items.map((ev) => (
-            <EventPreviewCard key={ev.id} ev={ev} isPast={false} />
-          ))}
-          {!upcomingEvents?.items.length && (
-            <p className="text-sm text-gray-400 col-span-3">예정된 행사가 없습니다.</p>
           )}
         </div>
       </section>
