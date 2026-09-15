@@ -44,9 +44,14 @@ export default function HomePage() {
     }
   }
 
-  const { data: events } = useQuery({
+  const { data: recentEvents } = useQuery({
     queryKey: ['events', 'recent'],
     queryFn: async () => (await eventsApi.getList({ recentOnly: true, pageSize: 3 })).data as PagedResult<EventList>,
+  })
+
+  const { data: upcomingEvents } = useQuery({
+    queryKey: ['events', 'upcoming'],
+    queryFn: async () => (await eventsApi.getList({ upcomingOnly: true, pageSize: 3 })).data as PagedResult<EventList>,
   })
 
   const { data: notices } = useQuery({
@@ -136,30 +141,27 @@ export default function HomePage() {
           <Link to="/events" className="text-sm text-crimson font-medium hover:underline">전체 일정 &rarr;</Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {events?.items.map((ev) => (
-            <div key={ev.id} className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
-              <h3 className="font-bold text-gray-800 mb-2">{ev.title}</h3>
-              <p className="text-sm text-gray-500">일시: {format(new Date(ev.eventDate), 'yyyy.MM.dd (EEE) HH:mm')}</p>
-              <p className="text-sm text-gray-500 mb-3">
-                장소: {ev.location}
-                {ev.googleMapsUrl && (
-                  <a
-                    href={getGoogleMapsLink(ev.googleMapsUrl)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-2 text-crimson hover:underline"
-                  >
-                    지도에서 보기 &gt;
-                  </a>
-                )}
-              </p>
-              <Link to={`/events/${ev.id}`} className="text-sm text-crimson font-medium hover:underline">
-                자세히 보기 &gt;
-              </Link>
-            </div>
+          {recentEvents?.items.map((ev) => (
+            <EventPreviewCard key={ev.id} ev={ev} ctaLabel="자세히 보기" />
           ))}
-          {!events?.items.length && (
+          {!recentEvents?.items.length && (
             <p className="text-sm text-gray-400 col-span-3">등록된 행사가 없습니다.</p>
+          )}
+        </div>
+      </section>
+
+      {/* 다가오는 행사 */}
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-gray-800">다가오는 행사</h2>
+          <Link to="/events" className="text-sm text-crimson font-medium hover:underline">전체 일정 &rarr;</Link>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {upcomingEvents?.items.map((ev) => (
+            <EventPreviewCard key={ev.id} ev={ev} ctaLabel="참가 신청 (RSVP)" />
+          ))}
+          {!upcomingEvents?.items.length && (
+            <p className="text-sm text-gray-400 col-span-3">예정된 행사가 없습니다.</p>
           )}
         </div>
       </section>
@@ -201,6 +203,33 @@ export default function HomePage() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// 홈 화면 "최근 행사" / "다가오는 행사" 위젯에서 공통으로 쓰는 행사 미리보기 카드.
+// ctaLabel만 다르게 넘겨서 지난 행사는 "자세히 보기", 예정된 행사는 "참가 신청 (RSVP)"로 표시합니다.
+function EventPreviewCard({ ev, ctaLabel }: { ev: EventList; ctaLabel: string }) {
+  return (
+    <div className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+      <h3 className="font-bold text-gray-800 mb-2">{ev.title}</h3>
+      <p className="text-sm text-gray-500">일시: {format(new Date(ev.eventDate), 'yyyy.MM.dd (EEE) HH:mm')}</p>
+      <p className="text-sm text-gray-500 mb-3">
+        장소: {ev.location}
+        {ev.googleMapsUrl && (
+          <a
+            href={getGoogleMapsLink(ev.googleMapsUrl)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-2 text-crimson hover:underline"
+          >
+            지도에서 보기 &gt;
+          </a>
+        )}
+      </p>
+      <Link to={`/events/${ev.id}`} className="text-sm text-crimson font-medium hover:underline">
+        {ctaLabel} &gt;
+      </Link>
     </div>
   )
 }
