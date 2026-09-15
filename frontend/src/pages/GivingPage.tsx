@@ -11,7 +11,7 @@ export default function GivingPage() {
       <SubPageBanner
         image="/images/hero-wide/hero-wide-09.jpg"
         title="회비 및 후원 안내"
-        subtitle="교우회 발전과 장학기금을 위한 소중한 동참"
+        subtitle="교우회 발전과 운영기금을 위한 소중한 동참"
       />
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 space-y-4">
