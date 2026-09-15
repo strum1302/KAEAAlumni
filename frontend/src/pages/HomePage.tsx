@@ -54,13 +54,13 @@ export default function HomePage() {
     queryFn: async () => (await eventsApi.getList({ upcomingOnly: true, pageSize: 3 })).data as PagedResult<EventList>,
   })
 
-  // "최근 및 다가오는 행사" - 두 목록을 합쳐서 지금 시각에 가장 가까운 순(과거/미래 상관없이)
-  // 으로 정렬한 뒤 3개만 보여줍니다. 예: 다가오는 행사가 며칠 안 남았으면 그게 먼저 나오고,
-  // 나머지는 최근에 열렸던 행사로 채워집니다.
+  // "최근 및 다가오는 행사" - 두 목록을 합쳐서 지금 시각에 가장 가까운 3개(과거/미래 상관없이)를
+  // 고른 뒤, 화면에는 일자 내림차순(최신/미래가 위, 오래된 것이 아래)으로 보여줍니다.
   const now = Date.now()
   const nearbyEvents = [...(recentEvents?.items ?? []), ...(upcomingEvents?.items ?? [])]
     .sort((a, b) => Math.abs(new Date(a.eventDate).getTime() - now) - Math.abs(new Date(b.eventDate).getTime() - now))
     .slice(0, 3)
+    .sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime())
 
   const { data: notices } = useQuery({
     queryKey: ['articles', 'NOTICE'],
