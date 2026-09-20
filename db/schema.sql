@@ -255,6 +255,8 @@ CREATE TABLE IF NOT EXISTS email_batches (
 
     subject           VARCHAR(300) NOT NULL,
     body              TEXT         NOT NULL,
+    -- true면 body를 HTML로 그대로 렌더링해서 보낸다 (표 붙여넣기 등 서식 있는 메일).
+    is_html           BOOLEAN      NOT NULL DEFAULT FALSE,
 
     recipient_count   INTEGER      NOT NULL DEFAULT 0,
     success_count     INTEGER      NOT NULL DEFAULT 0,

@@ -38,6 +38,7 @@ public class BrevoApiEmailSender : IEmailSender
         string? toName,
         string subject,
         string body,
+        bool isHtml = false,
         CancellationToken cancellationToken = default)
     {
         var apiKey = _config["Brevo:ApiKey"]
@@ -46,13 +47,18 @@ public class BrevoApiEmailSender : IEmailSender
             ?? throw new InvalidOperationException("Smtp:FromEmail이 설정되지 않았습니다. (Railway 환경변수 Smtp__FromEmail 확인)");
         var fromName = _config["Smtp:FromName"] ?? "고려대학교 미중서부 교우회";
 
-        var payload = new
+        // Brevo는 textContent/htmlContent 중 최소 1개가 필요 — isHtml이면 표/서식이 담긴
+        // HTML 그대로, 아니면 기존처럼 일반 텍스트로 보낸다.
+        var payload = new Dictionary<string, object?>
         {
-            sender = new { name = fromName, email = fromEmail },
-            to = new[] { new { email = toEmail, name = toName } },
-            subject,
-            textContent = body,
+            ["sender"] = new { name = fromName, email = fromEmail },
+            ["to"] = new[] { new { email = toEmail, name = toName } },
+            ["subject"] = subject,
         };
+        if (isHtml)
+            payload["htmlContent"] = body;
+        else
+            payload["textContent"] = body;
 
         var client = _httpClientFactory.CreateClient(nameof(BrevoApiEmailSender));
         using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.brevo.com/v3/smtp/email")
@@ -93,6 +99,7 @@ public class SmtpEmailSender : IEmailSender
         string? toName,
         string subject,
         string body,
+        bool isHtml = false,
         CancellationToken cancellationToken = default)
     {
         var host = _config["Smtp:Host"]
@@ -109,7 +116,7 @@ public class SmtpEmailSender : IEmailSender
         message.From.Add(new MailboxAddress(fromName, fromEmail));
         message.To.Add(string.IsNullOrWhiteSpace(toName) ? MailboxAddress.Parse(toEmail) : new MailboxAddress(toName, toEmail));
         message.Subject = subject;
-        message.Body = new TextPart("plain") { Text = body };
+        message.Body = new TextPart(isHtml ? "html" : "plain") { Text = body };
 
         // 465 포트는 처음부터 SSL로 접속(SslOnConnect)하고, 587(또는 그 외) 포트는
         // 연결 후 STARTTLS로 전환하는 방식(StartTls)을 쓴다 — Brevo는 587/StartTls.
@@ -195,7 +202,7 @@ public class EmailDispatchService : BackgroundService
             log.AttemptCount++;
             try
             {
-                await sender.SendAsync(log.ToEmail, log.ToName, batch.Subject, batch.Body, ct);
+                await sender.SendAsync(log.ToEmail, log.ToName, batch.Subject, batch.Body, batch.IsHtml, ct);
                 log.Status = EmailLogStatus.SENT;
                 log.SentAt = DateTime.UtcNow;
                 batch.SuccessCount++;

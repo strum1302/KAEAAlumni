@@ -19,6 +19,8 @@ public class EmailBatch : BaseEntity
 
     public string Subject { get; set; } = string.Empty;
     public string Body { get; set; } = string.Empty;
+    // true면 Body를 HTML로 그대로 렌더링해서 보낸다 (표 붙여넣기 등 서식 있는 메일).
+    public bool IsHtml { get; set; }
 
     public int RecipientCount { get; set; }
     public int SuccessCount { get; set; }

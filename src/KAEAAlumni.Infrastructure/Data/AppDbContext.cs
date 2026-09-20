@@ -210,6 +210,7 @@ public class AppDbContext : DbContext
             e.Property(b => b.ArticleId).HasColumnName("article_id");
             e.Property(b => b.Subject).HasColumnName("subject").HasMaxLength(300);
             e.Property(b => b.Body).HasColumnName("body");
+            e.Property(b => b.IsHtml).HasColumnName("is_html");
             e.Property(b => b.RecipientCount).HasColumnName("recipient_count");
             e.Property(b => b.SuccessCount).HasColumnName("success_count");
             e.Property(b => b.FailureCount).HasColumnName("failure_count");

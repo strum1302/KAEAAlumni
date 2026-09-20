@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
@@ -256,7 +256,13 @@ function buildDefaultSubject(event: EventDetail) {
   return `[고려대학교 미중서부 교우회] ${event.title} 안내`
 }
 
-function buildDefaultBody(event: EventDetail) {
+function escapeHtml(s: string) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+// 본문은 이제 HTML(서식 있는 리치 텍스트)로 편집하므로, 기본 문구도 줄바꿈을 <br>로 만든
+// HTML 형태로 만들어 둔다.
+function buildDefaultBodyHtml(event: EventDetail) {
   const lines = [
     '안녕하세요, 고려대학교 미중서부 교우회입니다.',
     '',
@@ -268,23 +274,60 @@ function buildDefaultBody(event: EventDetail) {
   if (event.description) {
     lines.push('', event.description)
   }
-  return lines.join('\n')
+  return lines.map(escapeHtml).join('<br>')
 }
+
+// 표 삽입 버튼으로 넣는 기본 표. 이메일 클라이언트는 <style> 태그나 class를 무시/제거하는
+// 경우가 많아, 표/셀 서식은 반드시 inline style로 넣어야 실제 수신 메일에서도 깨지지 않는다.
+const SAMPLE_TABLE_HTML = `
+  <table style="border-collapse:collapse;width:100%;font-size:13px;margin:8px 0">
+    <tr style="background:#860038;color:#fff;font-weight:bold">
+      <td style="border:1px solid #ccc;padding:6px 10px">학번</td>
+      <td style="border:1px solid #ccc;padding:6px 10px">이름</td>
+      <td style="border:1px solid #ccc;padding:6px 10px">금액</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #ccc;padding:6px 10px">&nbsp;</td>
+      <td style="border:1px solid #ccc;padding:6px 10px">&nbsp;</td>
+      <td style="border:1px solid #ccc;padding:6px 10px">&nbsp;</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #ccc;padding:6px 10px">&nbsp;</td>
+      <td style="border:1px solid #ccc;padding:6px 10px">&nbsp;</td>
+      <td style="border:1px solid #ccc;padding:6px 10px">&nbsp;</td>
+    </tr>
+  </table>
+  <p><br></p>
+`
 
 function NotifyModal({ event, onClose }: { event: EventDetail; onClose: () => void }) {
   const [target, setTarget] = useState<'ALL' | 'RSVP' | 'NOT_RSVP'>('ALL')
   const [subject, setSubject] = useState(() => buildDefaultSubject(event))
-  const [body, setBody] = useState(() => buildDefaultBody(event))
   const [sending, setSending] = useState(false)
+  const bodyRef = useRef<HTMLDivElement>(null)
 
   const targetLabel = { ALL: '전체 회원', RSVP: '이 행사 신청자', NOT_RSVP: '이 행사 미신청 회원' }[target]
 
+  // contentEditable은 리렌더링마다 값을 다시 넣으면 커서 위치가 튀므로, React가 관리하는
+  // controlled input으로 두지 않고 마운트 시 한 번만 채워 넣은 뒤 ref로 직접 읽는다
+  // (Excel/Word에서 복사한 표를 그대로 붙여넣어도 브라우저가 알아서 HTML로 붙여준다).
+  const insertHtmlAtCursor = (html: string) => {
+    bodyRef.current?.focus()
+    document.execCommand('insertHTML', false, html)
+  }
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
+    const bodyHtml = bodyRef.current?.innerHTML ?? ''
+    const bodyText = bodyRef.current?.textContent?.trim() ?? ''
+    if (!bodyText) {
+      toast.error('본문을 입력해주세요.')
+      return
+    }
     if (!confirm(`${targetLabel}에게 메일을 발송합니다. 계속할까요?`)) return
     setSending(true)
     try {
-      const res = await eventsApi.notify(event.id, { target, subject, body })
+      const res = await eventsApi.notify(event.id, { target, subject, body: bodyHtml, isHtml: true })
       toast.success(`${res.data.recipientCount}명에게 발송을 시작했습니다. 잠시 후 처리됩니다.`)
       onClose()
     } catch (err: any) {
@@ -312,9 +355,28 @@ function NotifyModal({ event, onClose }: { event: EventDetail; onClose: () => vo
           <input required placeholder="제목" value={subject}
             onChange={(e) => setSubject(e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-          <textarea required rows={8} placeholder="본문" value={body}
-            onChange={(e) => setBody(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+
+          <div className="flex items-center justify-between">
+            <div className="flex gap-1">
+              <button type="button" onClick={() => insertHtmlAtCursor(SAMPLE_TABLE_HTML)}
+                className="text-xs font-medium text-gray-600 border border-gray-300 rounded px-2 py-1 hover:bg-gray-50">
+                표 삽입
+              </button>
+              <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => document.execCommand('bold')}
+                className="text-xs font-bold text-gray-600 border border-gray-300 rounded px-2.5 py-1 hover:bg-gray-50">
+                B
+              </button>
+            </div>
+            <p className="text-[11px] text-gray-400">엑셀에서 복사한 표를 그대로 붙여넣을 수 있습니다</p>
+          </div>
+          <div
+            ref={bodyRef}
+            contentEditable
+            suppressContentEditableWarning
+            dangerouslySetInnerHTML={{ __html: buildDefaultBodyHtml(event) }}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[180px] max-h-[360px] overflow-y-auto focus:outline-none focus:ring-2 focus:ring-crimson/30"
+          />
+
           <div className="flex gap-2 pt-2">
             <button type="button" onClick={onClose} className="flex-1 border border-gray-300 rounded-lg py-2 text-sm">취소</button>
             <button type="submit" disabled={sending}

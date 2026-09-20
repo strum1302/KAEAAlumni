@@ -79,7 +79,7 @@ export const eventsApi = {
     guestName: string; email: string; cellPhone: string
     graduationInfo: string; additionalGuests: number; note?: string
   }) => api.post(`/events/${id}/rsvps`, data),
-  notify: (id: string, data: { target: string; subject: string; body: string }) =>
+  notify: (id: string, data: { target: string; subject: string; body: string; isHtml?: boolean }) =>
     api.post(`/events/${id}/notify`, data),
 }
 

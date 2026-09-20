@@ -233,7 +233,8 @@ public record ChangePasswordDto(
 public record SendEventNotifyDto(
     string Target,   // ALL | RSVP | NOT_RSVP
     string Subject,
-    string Body
+    string Body,
+    bool IsHtml = false   // true면 Body를 HTML로 그대로 렌더링 (표 붙여넣기 등)
 );
 
 public record EmailBatchDto(

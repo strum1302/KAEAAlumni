@@ -243,6 +243,7 @@ public class EventsController : ControllerBase
             EventId = id,
             Subject = dto.Subject,
             Body = dto.Body,
+            IsHtml = dto.IsHtml,
             RecipientCount = recipients.Count,
             SentBy = sentBy,
             SentByName = sentByName,
