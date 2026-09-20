@@ -157,7 +157,7 @@ export default function EventDetailPage() {
       )}
 
       {showNotify && (
-        <NotifyModal eventId={id!} onClose={() => setShowNotify(false)} />
+        <NotifyModal event={event} onClose={() => setShowNotify(false)} />
       )}
     </div>
   )
@@ -250,10 +250,31 @@ function RsvpModal({ eventId, member, onClose, onSubmitted }: {
 
 // 참가자 공지 메일 발송 모달. 실제 수신자 목록은 서버가 target 값을 보고 DB에서 조립하므로
 // (임의 주소로 발송하지 못하도록) 여기서는 대상 구분/제목/본문만 입력받아 보낸다.
-function NotifyModal({ eventId, onClose }: { eventId: string; onClose: () => void }) {
+// 메일 제목/본문 기본값 - 행사 내역(일시/장소/참가비/설명)을 미리 채워 넣어서, 관리자가
+// 매번 처음부터 다시 타이핑하지 않고 필요한 부분만 다듬어서 보낼 수 있게 한다.
+function buildDefaultSubject(event: EventDetail) {
+  return `[고려대학교 미중서부 교우회] ${event.title} 안내`
+}
+
+function buildDefaultBody(event: EventDetail) {
+  const lines = [
+    '안녕하세요, 고려대학교 미중서부 교우회입니다.',
+    '',
+    `■ ${event.title}`,
+    `- 일시: ${format(new Date(event.eventDate), 'yyyy년 M월 d일 (EEE) HH:mm')}`,
+    `- 장소: ${event.location}`,
+    `- 참가비: ${event.fee > 0 ? `$${event.fee.toFixed(2)}` : '무료'}`,
+  ]
+  if (event.description) {
+    lines.push('', event.description)
+  }
+  return lines.join('\n')
+}
+
+function NotifyModal({ event, onClose }: { event: EventDetail; onClose: () => void }) {
   const [target, setTarget] = useState<'ALL' | 'RSVP' | 'NOT_RSVP'>('ALL')
-  const [subject, setSubject] = useState('')
-  const [body, setBody] = useState('')
+  const [subject, setSubject] = useState(() => buildDefaultSubject(event))
+  const [body, setBody] = useState(() => buildDefaultBody(event))
   const [sending, setSending] = useState(false)
 
   const targetLabel = { ALL: '전체 회원', RSVP: '이 행사 신청자', NOT_RSVP: '이 행사 미신청 회원' }[target]
@@ -263,7 +284,7 @@ function NotifyModal({ eventId, onClose }: { eventId: string; onClose: () => voi
     if (!confirm(`${targetLabel}에게 메일을 발송합니다. 계속할까요?`)) return
     setSending(true)
     try {
-      const res = await eventsApi.notify(eventId, { target, subject, body })
+      const res = await eventsApi.notify(event.id, { target, subject, body })
       toast.success(`${res.data.recipientCount}명에게 발송을 시작했습니다. 잠시 후 처리됩니다.`)
       onClose()
     } catch (err: any) {
