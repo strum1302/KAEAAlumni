@@ -272,7 +272,10 @@ function buildDefaultBodyHtml(event: EventDetail) {
     `- 참가비: ${event.fee > 0 ? `$${event.fee.toFixed(2)}` : '무료'}`,
   ]
   if (event.description) {
-    lines.push('', event.description)
+    // event.description 안에도 줄바꿈(\n)이 들어있을 수 있는데, 그대로 한 줄로 합치면
+    // HTML에서는 줄바꿈이 무시되어 한 문단으로 붙어버린다. 그래서 줄 단위로 쪼개서 각각
+    // 별도 줄로 넣어야 원래 입력했던 줄바꿈(번호 목록 등)이 메일 본문에도 그대로 보인다.
+    lines.push('', ...event.description.split('\n'))
   }
   return lines.map(escapeHtml).join('<br>')
 }
