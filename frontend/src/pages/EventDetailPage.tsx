@@ -316,6 +316,30 @@ function NotifyModal({ event, onClose }: { event: EventDetail; onClose: () => vo
     document.execCommand('insertHTML', false, html)
   }
 
+  // 엑셀 표를 복사해서 붙여넣으면 셀 배경색/글자색 등은 클립보드 HTML에 그대로 담겨 오지만,
+  // 테두리는 "모든 테두리" 서식을 따로 지정해둔 셀이 아닌 이상 안 담겨 온다 (엑셀 화면의
+  // 옅은 회색 격자선은 실제 테두리가 아니라 화면 표시용 안내선이라 복사되지 않음).
+  // 그래서 붙여넣은 표 안에 테두리가 지정 안 된 셀이 있으면 기본 테두리를 넣어준다.
+  const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    const html = e.clipboardData.getData('text/html')
+    if (!html || !/<table/i.test(html)) return // 표가 아니면 기본 붙여넣기 동작 그대로 둔다
+
+    e.preventDefault()
+    const doc = new DOMParser().parseFromString(html, 'text/html')
+    doc.querySelectorAll('table').forEach((table) => {
+      const t = table as HTMLTableElement
+      if (!t.style.borderCollapse) t.style.borderCollapse = 'collapse'
+    })
+    doc.querySelectorAll('td, th').forEach((cellEl) => {
+      const cell = cellEl as HTMLElement
+      if (!cell.style.border && !cell.style.borderWidth && !cell.style.borderTop) {
+        cell.style.border = '1px solid #999'
+      }
+      if (!cell.style.padding) cell.style.padding = '4px 8px'
+    })
+    insertHtmlAtCursor(doc.body.innerHTML)
+  }
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     const bodyHtml = bodyRef.current?.innerHTML ?? ''
@@ -373,6 +397,7 @@ function NotifyModal({ event, onClose }: { event: EventDetail; onClose: () => vo
             ref={bodyRef}
             contentEditable
             suppressContentEditableWarning
+            onPaste={handlePaste}
             dangerouslySetInnerHTML={{ __html: buildDefaultBodyHtml(event) }}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[180px] max-h-[360px] overflow-y-auto focus:outline-none focus:ring-2 focus:ring-crimson/30"
           />
