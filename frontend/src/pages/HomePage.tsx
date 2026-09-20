@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
 import { eventsApi, articlesApi, galleryApi } from '../api'
 import { getVideoEmbedUrl, getVideoThumbnail } from '../utils/youtube'
@@ -202,12 +202,16 @@ export default function HomePage() {
 // /events 페이지의 카드와 같은 톤(예정/종료 뱃지, 미니 달력 날짜 배지)으로 통일해서,
 // 홈에서 보던 카드와 행사 목록 페이지의 카드가 서로 다르게 느껴지지 않도록 합니다.
 function EventPreviewCard({ ev, isPast }: { ev: EventList; isPast: boolean }) {
+  const navigate = useNavigate()
   const eventDate = new Date(ev.eventDate)
 
   return (
-    <div className={`rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow border ${
-      isPast ? 'bg-gray-50 border-gray-200' : 'bg-white border-crimson/40'
-    }`}>
+    <div
+      onClick={() => navigate(`/events/${ev.id}`)}
+      className={`rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow border cursor-pointer ${
+        isPast ? 'bg-gray-50 border-gray-200' : 'bg-white border-crimson/40'
+      }`}
+    >
       <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full mb-2 ${
         isPast ? 'bg-gray-200 text-gray-500' : 'bg-crimson-50 text-crimson'
       }`}>
@@ -235,6 +239,7 @@ function EventPreviewCard({ ev, isPast }: { ev: EventList; isPast: boolean }) {
             href={getGoogleMapsLink(ev.googleMapsUrl)}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
             className="ml-2 text-crimson hover:underline"
           >
             지도에서 보기 &gt;
@@ -243,12 +248,17 @@ function EventPreviewCard({ ev, isPast }: { ev: EventList; isPast: boolean }) {
       </p>
 
       {isPast ? (
-        <Link to={`/events/${ev.id}`} className="text-sm text-crimson font-medium hover:underline">
+        <Link
+          to={`/events/${ev.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="text-sm text-crimson font-medium hover:underline"
+        >
           자세히 보기 &gt;
         </Link>
       ) : (
         <Link
           to={`/events/${ev.id}`}
+          onClick={(e) => e.stopPropagation()}
           className="inline-block text-xs font-semibold text-white bg-crimson rounded-full px-4 py-1.5 hover:bg-crimson-800 transition-colors"
         >
           참가 신청 (RSVP) 바로가기 &gt;
