@@ -76,7 +76,9 @@ export default function EventDetailPage() {
           <span>참가비: {event.fee > 0 ? `$${event.fee.toFixed(2)}` : '무료'}</span>
           <span>현재 신청: 총 {event.currentAttendees}명</span>
         </div>
-        {event.description && <p className="text-sm text-gray-600 mt-3">{event.description}</p>}
+        {event.description && (
+          <p className="text-sm text-gray-600 mt-3 whitespace-pre-wrap">{event.description}</p>
+        )}
       </div>
 
       {/* 온라인 참가신청 버튼 - 버튼을 눌러야 신청서 모달이 열립니다 */}
