@@ -176,10 +176,11 @@ public class GalleryItemRepository : Repository<GalleryItem>, IGalleryItemReposi
     {
         var query = _db.GalleryItems.Include(g => g.Event).AsQueryable();
 
-        // 비회원 조회: 학교 갤러리/고대 자료실(행사·게시글과 무관한 항목)은 모두 공개,
-        // 행사 사진/영상은 임원이 "홈 노출"로 고른 대표 항목만 공개합니다.
+        // 비회원 조회: 학교 갤러리(CAMPUS)/고대 자료실(SCHOOL_SONG)은 모두 공개,
+        // 행사 사진/영상은 임원이 "홈·공개"로 고른 대표 항목만 공개합니다.
+        // (행사에도 연결 안 되고 분류도 없는 항목은 회원 전용)
         if (publicOnly)
-            query = query.Where(g => (g.EventId == null && g.ArticleId == null) || (g.EventId != null && g.ShowOnHome));
+            query = query.Where(g => g.Category == "CAMPUS" || g.Category == "SCHOOL_SONG" || (g.EventId != null && g.ShowOnHome));
 
         if (mediaType.HasValue)
             query = query.Where(g => g.MediaType == mediaType.Value);
@@ -205,7 +206,7 @@ public class GalleryItemRepository : Repository<GalleryItem>, IGalleryItemReposi
         {
             // 행사에 연결된 미디어("최근 행사 미디어", 행사 사진 탭)는 최신 행사(행사일자 내림차순)의
             // 사진이 먼저 보이도록 정렬하고, 같은 행사 안에서는 기존처럼 등록 순서(DisplayOrder)를 따릅니다.
-            query = query.OrderByDescending(g => g.Event!.EventDate).ThenBy(g => g.DisplayOrder).ThenByDescending(g => g.CreatedAt);
+            query = query.OrderByDescending(g => g.Event!.EventDate).ThenBy(g => g.DisplayOrder).ThenByDescending(g => g.CreatedAt).ThenBy(g => g.Id);
         }
         else
         {
@@ -215,8 +216,13 @@ public class GalleryItemRepository : Repository<GalleryItem>, IGalleryItemReposi
             query = query
                 .OrderByDescending(g => g.EventId != null ? g.Event!.EventDate : DateTime.MinValue)
                 .ThenBy(g => g.DisplayOrder)
-                .ThenByDescending(g => g.CreatedAt);
+                .ThenByDescending(g => g.CreatedAt)
+                .ThenBy(g => g.Id);
         }
+
+        // ↑ 마지막 ThenBy(Id)는 순서를 항상 고정하기 위한 것입니다. 등록 시각까지 같은 사진들이 있으면
+        //   PostgreSQL은 매번 다른 순서로 돌려줄 수 있어서, "홈·공개"를 체크하면(UPDATE로 행이 옮겨짐)
+        //   사진 위치가 뒤바뀌어 다른 사진의 체크가 꺼진 것처럼 보이는 문제가 있었습니다.
 
         var total = await query.CountAsync();
         var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
