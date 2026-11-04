@@ -172,7 +172,10 @@ export default function HomePage() {
       <section>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-800">최근 행사 미디어 (사진 &amp; 영상)</h2>
-          <Link to="/gallery" className="text-sm text-crimson font-medium hover:underline">갤러리 전체보기 &rarr;</Link>
+          {/* 행사 사진 전체 앨범은 회원 전용이라, 비회원에게는 전체보기 링크를 숨깁니다. */}
+          {isAuthenticated && (
+            <Link to="/gallery" className="text-sm text-crimson font-medium hover:underline">갤러리 전체보기 &rarr;</Link>
+          )}
         </div>
         <MediaGrid items={media?.items} onSelect={openMedia} emptyText="등록된 미디어가 없습니다." />
       </section>
