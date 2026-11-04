@@ -32,7 +32,8 @@ export default function Layout() {
     { to: '/events', label: '행사' },
     { to: '/gallery', label: '갤러리' },
     { to: '/community/all', label: '게시판' },
-    { to: '/giving', label: '회비안내' },
+    // 회비안내는 회원 전용 — 비회원에게는 메뉴를 숨깁니다.
+    ...(isAuthenticated ? [{ to: '/giving', label: '회비안내' }] : []),
   ]
 
   const isActive = (path: string) => {
@@ -228,13 +229,13 @@ export default function Layout() {
                 <li><Link to="/about" className="hover:text-white">교우회 소개</Link></li>
                 <li><Link to="/events" className="hover:text-white">행사 및 모임</Link></li>
                 <li><Link to="/community/notice" className="hover:text-white">공지사항</Link></li>
-                <li><Link to="/giving" className="hover:text-white">회비 및 후원</Link></li>
+                {isAuthenticated && <li><Link to="/giving" className="hover:text-white">회비 및 후원</Link></li>}
               </ul>
             </div>
             <div>
               <h4 className="text-white font-bold mb-3">연락처</h4>
               <p className="text-sm">Email: info@kuchicago.org</p>
-              <p className="text-sm mt-1">Zelle Tag: kuaa1905</p>
+              {isAuthenticated && <p className="text-sm mt-1">Zelle Tag: kuaa1905</p>}
               <p className="text-sm mt-1">Chicago &amp; Midwest, USA</p>
             </div>
           </div>

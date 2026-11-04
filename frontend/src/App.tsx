@@ -53,7 +53,10 @@ export default function App() {
             <Route path="/community/:category/:id" element={<ArticleDetailPage />} />
             <Route path="/join" element={<JoinPage />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
-            <Route path="/giving" element={<GivingPage />} />
+            {/* 회비안내는 회원 전용 (비회원은 로그인 페이지로 이동) */}
+            <Route path="/giving" element={
+              <PrivateRoute><GivingPage /></PrivateRoute>
+            } />
             <Route path="/profile" element={
               <PrivateRoute><ProfilePage /></PrivateRoute>
             } />
