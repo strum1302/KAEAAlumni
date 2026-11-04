@@ -113,8 +113,8 @@ export default function EventDetailPage() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <div className="flex gap-2">
-            <TabButton active={tab === 'PHOTO'} onClick={() => setTab('PHOTO')} label={`사진 갤러리 (${event.photoCount})`} />
-            <TabButton active={tab === 'VIDEO'} onClick={() => setTab('VIDEO')} label={`영상 갤러리 (${event.videoCount})`} />
+            <TabButton active={tab === 'PHOTO'} onClick={() => setTab('PHOTO')} label={isAuthenticated ? `사진 갤러리 (${event.photoCount})` : '사진 갤러리'} />
+            <TabButton active={tab === 'VIDEO'} onClick={() => setTab('VIDEO')} label={isAuthenticated ? `영상 갤러리 (${event.videoCount})` : '영상 갤러리'} />
           </div>
           {canManage && (
             <button onClick={() => setShowAddMedia(true)}
@@ -124,6 +124,12 @@ export default function EventDetailPage() {
           )}
         </div>
 
+        {!isAuthenticated && (
+          <p className="text-xs text-gray-500 mb-3">
+            대표 사진만 공개됩니다. 전체 앨범은{' '}
+            <Link to="/login" className="text-crimson font-medium hover:underline">로그인</Link> 후 보실 수 있습니다.
+          </p>
+        )}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {gallery?.items.map((item) => (
             <div key={item.id} className="rounded-xl overflow-hidden bg-gray-100">
@@ -442,7 +448,9 @@ function TabButton({ active, onClick, label }: { active: boolean; onClick: () =>
 }
 
 function AddMediaModal({ eventId, onClose, onCreated }: { eventId: string; onClose: () => void; onCreated: () => void }) {
-  const [form, setForm] = useState({ title: '', mediaType: 'PHOTO', mediaUrl: '', thumbnailUrl: '', description: '' })
+  // 행사 사진은 기본적으로 회원 전용으로 올라갑니다. 대표 사진(홈 표시 + 비회원 공개)은
+  // 갤러리 화면의 "홈·공개" 체크박스로 따로 지정합니다.
+  const [form, setForm] = useState({ title: '', mediaType: 'PHOTO', mediaUrl: '', thumbnailUrl: '', description: '', showOnHome: false })
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
 

@@ -172,9 +172,14 @@ public class GalleryItemRepository : Repository<GalleryItem>, IGalleryItemReposi
     public GalleryItemRepository(AppDbContext db) : base(db) { }
 
     public async Task<(List<GalleryItem> Items, int Total)> GetPagedAsync(
-        MediaType? mediaType, Guid? eventId, Guid? articleId, int page, int pageSize, bool? hasEvent = null, int? year = null, bool? showOnHome = null, string? category = null)
+        MediaType? mediaType, Guid? eventId, Guid? articleId, int page, int pageSize, bool? hasEvent = null, int? year = null, bool? showOnHome = null, string? category = null, bool publicOnly = false)
     {
         var query = _db.GalleryItems.Include(g => g.Event).AsQueryable();
+
+        // 비회원 조회: 학교 갤러리/고대 자료실(행사·게시글과 무관한 항목)은 모두 공개,
+        // 행사 사진/영상은 임원이 "홈 노출"로 고른 대표 항목만 공개합니다.
+        if (publicOnly)
+            query = query.Where(g => (g.EventId == null && g.ArticleId == null) || (g.EventId != null && g.ShowOnHome));
 
         if (mediaType.HasValue)
             query = query.Where(g => g.MediaType == mediaType.Value);

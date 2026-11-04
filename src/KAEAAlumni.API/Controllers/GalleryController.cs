@@ -17,6 +17,13 @@ public class GalleryController : ControllerBase
     public GalleryController(IGalleryItemRepository galleryRepo)
         => _galleryRepo = galleryRepo;
 
+    private bool IsGuest => User.Identity?.IsAuthenticated != true;
+
+    // 비회원에게 공개되는 항목: 학교 갤러리/고대 자료실 전체 + 행사 미디어 중 "홈 노출"(대표) 항목.
+    // (Repository.GetPagedAsync 의 publicOnly 조건과 동일하게 유지할 것)
+    private static bool IsPublicItem(GalleryItem g)
+        => (g.EventId == null && g.ArticleId == null) || (g.EventId != null && g.ShowOnHome);
+
     [HttpGet]
     public async Task<IActionResult> GetItems(
         [FromQuery] string? mediaType,
@@ -39,7 +46,7 @@ public class GalleryController : ControllerBase
             Enum.TryParse<MediaType>(mediaType, true, out var parsed))
             type = parsed;
 
-        var (items, total) = await _galleryRepo.GetPagedAsync(type, eventId, articleId, page, pageSize, hasEvent, year, showOnHome, category);
+        var (items, total) = await _galleryRepo.GetPagedAsync(type, eventId, articleId, page, pageSize, hasEvent, year, showOnHome, category, publicOnly: IsGuest);
         var dtos = items.Select(g => new GalleryItemDto(
             g.Id, g.Title, g.Description, g.MediaType.ToString(),
             (!full && g.MediaType == MediaType.PHOTO && !string.IsNullOrEmpty(g.ThumbnailUrl)) ? g.ThumbnailUrl! : g.MediaUrl,
@@ -61,6 +68,9 @@ public class GalleryController : ControllerBase
     {
         var item = await _galleryRepo.GetByIdAsync(id);
         if (item == null) return NotFound();
+        // 비회원은 공개 항목만 원본을 볼 수 있습니다.
+        if (IsGuest && !IsPublicItem(item))
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = "회원 전용 사진입니다. 로그인 후 이용해 주세요." });
 
         return Ok(new GalleryItemDto(
             item.Id, item.Title, item.Description, item.MediaType.ToString(), item.MediaUrl,
@@ -107,7 +117,8 @@ public class GalleryController : ControllerBase
         return Ok(new { message = "정렬 순서가 변경되었습니다." });
     }
 
-    // 홈페이지 노출 여부 변경 (체크 해제 시 홈페이지 목록에서만 숨김, 갤러리 전체보기에는 계속 노출)
+    // 홈페이지 노출 여부 변경. 행사 미디어는 이 값이 곧 "비회원 공개" 여부이기도 합니다.
+    // (체크 해제 시 홈페이지에서 숨겨지고, 비회원 갤러리에서도 숨겨짐 — 회원에게는 계속 노출)
     [Authorize(Roles = "OFFICER,ADMIN")]
     [HttpPut("{id}/visibility")]
     public async Task<IActionResult> UpdateVisibility(Guid id, [FromBody] UpdateGalleryItemVisibilityDto dto)
@@ -117,7 +128,7 @@ public class GalleryController : ControllerBase
 
         item.ShowOnHome = dto.ShowOnHome;
         await _galleryRepo.SaveChangesAsync();
-        return Ok(new { message = dto.ShowOnHome ? "홈페이지에 표시됩니다." : "홈페이지에서 숨김 처리되었습니다." });
+        return Ok(new { message = dto.ShowOnHome ? "홈페이지에 표시되고 비회원에게도 공개됩니다." : "홈페이지에서 숨기고 회원 전용으로 바뀌었습니다." });
     }
 
     [Authorize(Roles = "OFFICER,ADMIN")]

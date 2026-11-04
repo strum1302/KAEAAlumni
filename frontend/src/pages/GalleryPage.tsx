@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
@@ -27,7 +27,7 @@ const SCOPE_LABELS: Record<GalleryScope, string> = {
 }
 
 export default function GalleryPage() {
-  const { member } = useAuthStore()
+  const { member, isAuthenticated } = useAuthStore()
   const canManage = member?.role === 'OFFICER' || member?.role === 'ADMIN'
   const queryClient = useQueryClient()
   const [searchParams] = useSearchParams()
@@ -118,6 +118,14 @@ export default function GalleryPage() {
             + 미디어 등록
           </button>
         </div>
+      )}
+
+      {!isAuthenticated && (
+        <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 mb-4">
+          행사 사진·영상은 대표 사진만 공개됩니다. 전체 앨범은{' '}
+          <Link to="/login" className="text-crimson font-medium hover:underline">로그인</Link>
+          {' '}후 보실 수 있습니다.
+        </p>
       )}
 
       <div className="flex gap-2 flex-wrap mb-3">
@@ -296,7 +304,7 @@ function GalleryItemAdminControls({
       >
         {saving ? '저장 중...' : '순서저장'}
       </button>
-      <label className="flex items-center gap-1 text-xs text-gray-500 cursor-pointer" title="체크 해제 시 홈페이지 목록에서 숨겨집니다 (갤러리에는 계속 노출)">
+      <label className="flex items-center gap-1 text-xs text-gray-500 cursor-pointer" title="체크하면 홈페이지에 표시되고 비회원에게도 공개됩니다. 해제하면 회원 전용(갤러리에서 회원에게만 노출)">
         <input
           type="checkbox"
           checked={item.showOnHome}
@@ -304,7 +312,7 @@ function GalleryItemAdminControls({
           onChange={toggleVisibility}
           className="rounded"
         />
-        홈 노출
+        홈·공개
       </label>
       <button
         onClick={onDelete}
@@ -486,7 +494,7 @@ function AddGalleryModal({ onClose, onCreated }: { onClose: () => void; onCreate
               onChange={(e) => setForm({ ...form, showOnHome: e.target.checked })}
               className="rounded"
             />
-            홈페이지에 표시 (체크 해제 시 갤러리 전체보기에만 노출됩니다)
+            홈페이지에 표시 + 비회원 공개 (체크 해제 시 행사 사진은 회원에게만 보입니다)
           </label>
           <div className="flex gap-2 pt-2">
             <button type="button" onClick={onClose} className="flex-1 border border-gray-300 rounded-lg py-2 text-sm">취소</button>
