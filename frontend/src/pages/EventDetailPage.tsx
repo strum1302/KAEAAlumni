@@ -13,7 +13,7 @@ import type { EventDetail, GalleryItem, PagedResult } from '../types'
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const { member } = useAuthStore()
+  const { member, isAuthenticated } = useAuthStore()
   const queryClient = useQueryClient()
   const [tab, setTab] = useState<'PHOTO' | 'VIDEO'>('PHOTO')
   const [showAddMedia, setShowAddMedia] = useState(false)
@@ -83,10 +83,24 @@ export default function EventDetailPage() {
 
       {/* 온라인 참가신청 버튼 - 버튼을 눌러야 신청서 모달이 열립니다 */}
       <div className="flex flex-wrap gap-2">
-        <button onClick={() => setShowRsvp(true)}
-          className="bg-crimson text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-crimson-800 transition-colors">
-          온라인 참가신청
-        </button>
+        {isAuthenticated ? (
+          <button onClick={() => setShowRsvp(true)}
+            className="bg-crimson text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-crimson-800 transition-colors">
+            온라인 참가신청
+          </button>
+        ) : (
+          // 참가 신청은 회원만 가능합니다. 비회원에게는 로그인 안내를 보여줍니다.
+          <div className="flex flex-wrap items-center gap-3">
+            <Link to="/login"
+              className="bg-crimson text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-crimson-800 transition-colors">
+              로그인 후 참가신청
+            </Link>
+            <span className="text-sm text-gray-500">
+              참가 신청은 회원만 가능합니다. 처음이시면{' '}
+              <Link to="/join" className="text-crimson font-medium hover:underline">신입 교우 등록</Link>을 해 주세요.
+            </span>
+          </div>
+        )}
         {canManage && (
           <button onClick={() => setShowNotify(true)}
             className="border border-crimson text-crimson font-semibold px-5 py-2.5 rounded-lg hover:bg-crimson-50 transition-colors">
@@ -151,7 +165,7 @@ export default function EventDetailPage() {
         }} />
       )}
 
-      {showRsvp && (
+      {showRsvp && isAuthenticated && (
         <RsvpModal eventId={id!} member={member} onClose={() => setShowRsvp(false)}
           onSubmitted={() => queryClient.invalidateQueries({ queryKey: ['event', id] })} />
       )}

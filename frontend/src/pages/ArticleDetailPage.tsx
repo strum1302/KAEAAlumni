@@ -21,11 +21,27 @@ export default function ArticleDetailPage() {
   const [postingComment, setPostingComment] = useState(false)
   const [likeBusy, setLikeBusy] = useState(false)
 
-  const { data: article, refetch } = useQuery({
+  const { data: article, refetch, error } = useQuery({
     queryKey: ['article', id],
     queryFn: async () => (await articlesApi.getById(id!)).data as ArticleDetail,
     enabled: !!id,
+    retry: false,
   })
+
+  // 비회원은 공지사항/자유게시판 글만 열람할 수 있습니다. (서버도 403으로 막습니다)
+  const guestAllowed = category === 'notice' || category === 'free'
+  if (!isAuthenticated && (!guestAllowed || (error as any)?.response?.status === 403)) {
+    return (
+      <div className="max-w-md mx-auto text-center py-16 space-y-3">
+        <p className="text-gray-700 font-medium">회원 전용 게시글입니다.</p>
+        <p className="text-sm text-gray-500">로그인 후 이용해 주세요. 비회원은 공지사항과 자유게시판만 열람할 수 있습니다.</p>
+        <div className="flex justify-center gap-2 pt-2">
+          <Link to="/login" className="bg-crimson text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-crimson-800">로그인</Link>
+          <Link to="/community/notice" className="text-sm px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50">공지사항 보기</Link>
+        </div>
+      </div>
+    )
+  }
 
   if (!article) return <p className="text-sm text-gray-400">불러오는 중...</p>
 

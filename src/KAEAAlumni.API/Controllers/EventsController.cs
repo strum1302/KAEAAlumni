@@ -149,7 +149,8 @@ public class EventsController : ControllerBase
         return Ok(items);
     }
 
-    // 온라인 참가 신청 (비회원도 가능 — GUEST/MEMBER/YT/OFFICER/ADMIN 모두 허용)
+    // 온라인 참가 신청 (로그인한 회원만 가능 — 비회원은 행사 정보 열람만 가능)
+    [Authorize]
     [HttpPost("{id}/rsvps")]
     public async Task<IActionResult> CreateRsvp(Guid id, [FromBody] CreateEventRsvpDto dto)
     {

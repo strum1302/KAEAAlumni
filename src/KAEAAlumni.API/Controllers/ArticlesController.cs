@@ -43,6 +43,20 @@ public class ArticlesController : ControllerBase
         return article.AuthorId.HasValue && article.AuthorId.Value == memberId;
     }
 
+    // 비회원(로그인 안 한 방문자)이 열람할 수 있는 게시판: 공지사항(NOTICE), 자유게시판(FREE)
+    private static bool IsPublicCategory(ArticleCategory category)
+        => category is ArticleCategory.NOTICE or ArticleCategory.FREE;
+
+    // 비회원이 회원 전용 게시판에 접근했을 때의 응답.
+    // 토큰을 보냈는데 인증이 안 된 경우(=액세스 토큰 만료)는 401을 돌려줘 프런트가 토큰을 갱신하게 하고,
+    // 토큰 자체가 없는 순수 비회원은 403으로 막습니다. (401이면 프런트가 로그인 페이지로 튕겨버리므로)
+    private IActionResult MembersOnly()
+    {
+        if (Request.Headers.Authorization.ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            return Unauthorized();
+        return StatusCode(StatusCodes.Status403Forbidden, new { message = "회원 전용 게시판입니다. 로그인 후 이용해 주세요." });
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetArticles(
         [FromQuery] string? category,
@@ -53,6 +67,13 @@ public class ArticlesController : ControllerBase
         if (!string.IsNullOrWhiteSpace(category) &&
             Enum.TryParse<ArticleCategory>(category, true, out var parsed))
             cat = parsed;
+
+        // 비회원: 공지사항/자유게시판만 조회 가능. ("전체" 탭은 비회원에게 보이지 않으므로 자유게시판으로 대체)
+        if (User.Identity?.IsAuthenticated != true)
+        {
+            if (cat == null) cat = ArticleCategory.FREE;
+            else if (!IsPublicCategory(cat.Value)) return MembersOnly();
+        }
 
         var (articles, total) = await _articleRepo.GetPagedAsync(cat, page, pageSize);
         var items = articles.Select(a => new ArticleListDto(
@@ -69,6 +90,10 @@ public class ArticlesController : ControllerBase
     {
         var article = await _articleRepo.GetWithGalleryAsync(id);
         if (article == null) return NotFound();
+
+        // 비회원은 공지사항/자유게시판 글만 열람 가능
+        if (User.Identity?.IsAuthenticated != true && !IsPublicCategory(article.Category))
+            return MembersOnly();
 
         article.ViewCount++;
         await _articleRepo.SaveChangesAsync();

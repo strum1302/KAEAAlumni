@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link, Navigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
@@ -25,6 +25,9 @@ const CATEGORY_LABELS: Record<ArticleCategory, string> = {
   NOTICE: '공지사항', STORY: '우리 이야기', FREE: '자유게시판', FELLOWSHIP: '미중서부 후원', HISTORY: '연혁',
 }
 
+// 비회원(로그인 안 한 방문자)은 공지사항과 자유게시판만 볼 수 있습니다.
+const GUEST_TABS: TabKey[] = ['NOTICE', 'FREE']
+
 const PAGE_SIZE = 15
 
 export default function CommunityPage() {
@@ -37,6 +40,8 @@ export default function CommunityPage() {
   const [insertingImage, setInsertingImage] = useState(false)
   const contentRef = useRef<HTMLTextAreaElement>(null)
   const activeCategory = category.toUpperCase() as TabKey
+  const visibleTabs = isAuthenticated ? TABS : TABS.filter((t) => GUEST_TABS.includes(t.key))
+  const guestBlocked = !isAuthenticated && !GUEST_TABS.includes(activeCategory)
 
   const canWriteNotice = member?.role === 'OFFICER' || member?.role === 'ADMIN'
   const canWrite = activeCategory === 'ALL'
@@ -50,6 +55,7 @@ export default function CommunityPage() {
     queryFn: async () => (await articlesApi.getList({
       category: activeCategory === 'ALL' ? undefined : activeCategory, page, pageSize: PAGE_SIZE,
     })).data as PagedResult<ArticleList>,
+    enabled: !guestBlocked,
   })
 
   // 커서 위치에 사진을 삽입합니다. 본문 텍스트 안에 [[img:...]] 마커로 끼워 넣고,
@@ -93,6 +99,9 @@ export default function CommunityPage() {
     }
   }
 
+  // 비회원이 회원 전용 게시판(전체/우리 이야기/후원 등) 주소로 들어오면 공지사항으로 보냅니다.
+  if (guestBlocked) return <Navigate to="/community/notice" replace />
+
   return (
     <div>
       <SubPageBanner
@@ -104,7 +113,7 @@ export default function CommunityPage() {
 
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div className="flex gap-2">
-          {TABS.map((t) => (
+          {visibleTabs.map((t) => (
             <button key={t.key} onClick={() => navigate(`/community/${t.key.toLowerCase()}`)}
               className={`px-4 py-1.5 text-sm rounded-full font-medium ${
                 activeCategory === t.key ? 'bg-crimson text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -120,6 +129,16 @@ export default function CommunityPage() {
           </button>
         )}
       </div>
+
+      {!isAuthenticated && (
+        <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 mb-4">
+          우리 이야기·미중서부 후원 등 다른 게시판은 회원 전용입니다.{' '}
+          <Link to="/login" className="text-crimson font-medium hover:underline">로그인</Link>
+          {' '}또는{' '}
+          <Link to="/join" className="text-crimson font-medium hover:underline">신입 교우 등록</Link>
+          {' '}후 이용해 주세요.
+        </p>
+      )}
 
       {showWrite && (
         <form onSubmit={submit} className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 mb-6 space-y-3">

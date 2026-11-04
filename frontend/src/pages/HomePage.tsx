@@ -6,6 +6,7 @@ import { eventsApi, articlesApi, galleryApi } from '../api'
 import { getVideoEmbedUrl, getVideoThumbnail } from '../utils/youtube'
 import { getGoogleMapsLink } from '../utils/maps'
 import CampusHero from '../components/CampusHero'
+import { useAuthStore } from '../store/authStore'
 import type { EventList, ArticleList, GalleryItem, PagedResult } from '../types'
 
 // 히어로에 쓸 캠퍼스 사진 9장 (사계절 + 응원전 분위기가 고루 섞이도록 27장 중 선별).
@@ -61,6 +62,14 @@ export default function HomePage() {
     .sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime())
     .slice(0, 3)
 
+  // 우리 이야기는 회원 전용이라, 비회원에게는 목록 대신 로그인 안내를 보여줍니다. (공지사항은 공개)
+  const { isAuthenticated } = useAuthStore()
+  const membersOnlyRow = (
+    <li className="px-4 py-3 text-sm text-gray-400">
+      회원 전용입니다. <Link to="/login" className="text-crimson hover:underline">로그인</Link> 후 확인해 주세요.
+    </li>
+  )
+
   const { data: notices } = useQuery({
     queryKey: ['articles', 'NOTICE'],
     queryFn: async () => (await articlesApi.getList({ category: 'NOTICE', pageSize: 3 })).data as PagedResult<ArticleList>,
@@ -69,6 +78,7 @@ export default function HomePage() {
   const { data: stories } = useQuery({
     queryKey: ['articles', 'STORY'],
     queryFn: async () => (await articlesApi.getList({ category: 'STORY', pageSize: 3 })).data as PagedResult<ArticleList>,
+    enabled: isAuthenticated,
   })
 
   // 행사에 연결된 사진/영상("최근 행사 미디어")과 교가·응원가 등 특정 행사와 무관한
@@ -128,7 +138,7 @@ export default function HomePage() {
             <Link to="/community/story" className="text-sm text-crimson hover:underline">더보기</Link>
           </div>
           <ul className="divide-y divide-gray-100 bg-white rounded-xl border border-gray-200 shadow-sm">
-            {stories?.items.map((a) => (
+            {isAuthenticated && stories?.items.map((a) => (
               <li key={a.id}>
                 <Link to={`/community/story/${a.id}`} className="flex items-center justify-between gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-crimson-50">
                   <span className="truncate">{a.title}</span>
@@ -136,7 +146,8 @@ export default function HomePage() {
                 </Link>
               </li>
             ))}
-            {!stories?.items.length && <li className="px-4 py-3 text-sm text-gray-400">등록된 이야기가 없습니다.</li>}
+            {!isAuthenticated && membersOnlyRow}
+            {isAuthenticated && !stories?.items.length && <li className="px-4 py-3 text-sm text-gray-400">등록된 이야기가 없습니다.</li>}
           </ul>
         </div>
       </section>
@@ -203,6 +214,8 @@ export default function HomePage() {
 // 홈에서 보던 카드와 행사 목록 페이지의 카드가 서로 다르게 느껴지지 않도록 합니다.
 function EventPreviewCard({ ev, isPast }: { ev: EventList; isPast: boolean }) {
   const navigate = useNavigate()
+  // 참가 신청(RSVP)은 회원만 가능 — 비회원에게는 행사 정보 보기 버튼만 보여줍니다.
+  const { isAuthenticated } = useAuthStore()
   const eventDate = new Date(ev.eventDate)
 
   return (
@@ -261,7 +274,7 @@ function EventPreviewCard({ ev, isPast }: { ev: EventList; isPast: boolean }) {
           onClick={(e) => e.stopPropagation()}
           className="inline-block text-xs font-semibold text-white bg-crimson rounded-full px-4 py-1.5 hover:bg-crimson-800 transition-colors"
         >
-          참가 신청 (RSVP) 바로가기 &gt;
+          {isAuthenticated ? '참가 신청 (RSVP) 바로가기' : '행사 자세히 보기'} &gt;
         </Link>
       )}
     </div>

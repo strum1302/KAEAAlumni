@@ -200,6 +200,8 @@ function EventCard({
   onOpenLightbox: (photos: GalleryItem[], index: number) => void
 }) {
   const navigate = useNavigate()
+  // 참가 신청(RSVP)은 회원만 가능 — 비회원에게는 행사 정보 보기 버튼만 보여줍니다.
+  const { isAuthenticated } = useAuthStore()
   const isPast = new Date(ev.eventDate) < new Date()
   const [loadingPhotos, setLoadingPhotos] = useState(false)
 
@@ -330,7 +332,7 @@ function EventCard({
               onClick={() => navigate(`/events/${ev.id}`)}
               className="text-xs font-semibold text-white bg-crimson rounded-full px-4 py-1.5 hover:bg-crimson-800 transition-colors whitespace-nowrap"
             >
-              참가 신청 (RSVP) 바로가기 &gt;
+              {isAuthenticated ? '참가 신청 (RSVP) 바로가기' : '행사 자세히 보기'} &gt;
             </button>
           )}
         </div>
