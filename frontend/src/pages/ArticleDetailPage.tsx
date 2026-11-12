@@ -131,7 +131,7 @@ export default function ArticleDetailPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="w-full">
       <Link to={`/community/${category}`} className="text-sm text-crimson hover:underline">&larr; 목록으로</Link>
 
       {!editing ? (

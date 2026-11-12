@@ -25,6 +25,8 @@ function toBlocks(content: string): Block[] {
   return blocks
 }
 
+// 짧은 칸(20자 이하, 줄바꿈 없음)은 한 줄로 유지해 이름·금액이 글자 단위로 꺾이지 않게 하고,
+// 긴 칸만 최소 폭을 두고 줄바꿈합니다.
 // 칸 안의 <br> 표기를 줄바꿈으로 보여줍니다 (HTML로 해석하지 않고 텍스트로만 처리).
 function CellText({ text }: { text: string }) {
   const lines = text.split(/<br\s*\/?>/i)
@@ -59,7 +61,9 @@ function ContentTable({ rows }: { rows: string[][] }) {
           {body.map((r, ri) => (
             <tr key={ri} className="even:bg-gray-50">
               {r.map((c, ci) => (
-                <td key={ci} className="border border-gray-300 px-3 py-1.5 align-top">
+                <td key={ci} className={`border border-gray-300 px-3 py-1.5 align-top ${
+                  c.length <= 20 && !/<br/i.test(c) ? 'whitespace-nowrap' : 'min-w-[10rem]'
+                }`}>
                   <CellText text={c} />
                 </td>
               ))}
