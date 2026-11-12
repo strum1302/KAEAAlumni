@@ -78,7 +78,7 @@ public class ArticlesController : ControllerBase
         var (articles, total) = await _articleRepo.GetPagedAsync(cat, page, pageSize);
         var items = articles.Select(a => new ArticleListDto(
             a.Id, a.Category.ToString(), a.Title, a.AuthorName, a.AuthorId, a.ViewCount,
-            a.Comments.Count, a.Likes.Count, a.CreatedAt
+            a.Comments.Count, a.Likes.Count, a.CreatedAt, a.MembersOnly
         )).ToList();
 
         return Ok(new PagedResultDto<ArticleListDto>(
@@ -91,8 +91,8 @@ public class ArticlesController : ControllerBase
         var article = await _articleRepo.GetWithGalleryAsync(id);
         if (article == null) return NotFound();
 
-        // 비회원은 공지사항/자유게시판 글만 열람 가능
-        if (User.Identity?.IsAuthenticated != true && !IsPublicCategory(article.Category))
+        // 비회원은 공지사항/자유게시판 글만 열람 가능. 그 안에서도 "회원 전용"으로 지정된 글은 막음.
+        if (User.Identity?.IsAuthenticated != true && (!IsPublicCategory(article.Category) || article.MembersOnly))
             return MembersOnly();
 
         article.ViewCount++;
@@ -114,7 +114,8 @@ public class ArticlesController : ControllerBase
             )).ToList(),
             article.Comments.OrderBy(c => c.CreatedAt).Select(c => new ArticleCommentDto(
                 c.Id, c.ArticleId, c.MemberId, c.AuthorName, c.Content, c.CreatedAt
-            )).ToList()
+            )).ToList(),
+            article.MembersOnly
         );
         return Ok(dto);
     }
@@ -138,6 +139,8 @@ public class ArticlesController : ControllerBase
             Title = dto.Title,
             Content = dto.Content,
             AuthorName = dto.AuthorName,
+            // "회원 전용"은 비회원 열람 가능 게시판(공지사항/자유게시판)에서만 의미가 있음
+            MembersOnly = dto.MembersOnly && IsPublicCategory(category),
             AuthorId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!)
         };
         await _articleRepo.AddAsync(article);
@@ -156,6 +159,8 @@ public class ArticlesController : ControllerBase
 
         article.Title = dto.Title;
         article.Content = dto.Content;
+        if (dto.MembersOnly.HasValue)
+            article.MembersOnly = dto.MembersOnly.Value && IsPublicCategory(article.Category);
         await _articleRepo.SaveChangesAsync();
         return NoContent();
     }

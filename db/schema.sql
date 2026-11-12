@@ -236,6 +236,13 @@ CREATE TABLE IF NOT EXISTS article_likes (
 CREATE INDEX IF NOT EXISTS idx_article_likes_article_id ON article_likes(article_id);
 
 -- ------------------------------------------------------------------------------
+-- 게시글 "회원 전용" 옵션 (2026-11-11)
+-- 공지사항/자유게시판 글 중 이 값이 TRUE인 글은 비회원에게 제목만 보이고 본문은 로그인 후 열람.
+-- ※ 이 컬럼을 참조하는 백엔드를 배포(push)하기 전에 반드시 먼저 실행할 것.
+-- ------------------------------------------------------------------------------
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS members_only BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- ------------------------------------------------------------------------------
 -- 메일 발송 이력 (email_batches / email_logs)
 -- 지금은 행사 공지(EVENT_NOTIFY) 발송에만 실제로 쓰이지만, 추후 게시글 알림/가입 인증/
 -- 비밀번호 재설정 메일도 같은 구조로 이력을 남길 수 있도록 kind를 범용으로 둠.

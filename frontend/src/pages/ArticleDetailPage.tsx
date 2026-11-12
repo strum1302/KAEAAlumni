@@ -7,6 +7,7 @@ import { articlesApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import ArticleContent from '../components/common/ArticleContent'
 import { useTableEditing, TableInsertButton } from '../components/common/TableTools'
+import MembersOnlyBadge from '../components/common/MembersOnlyBadge'
 import type { ArticleDetail } from '../types'
 
 export default function ArticleDetailPage() {
@@ -15,7 +16,7 @@ export default function ArticleDetailPage() {
   const queryClient = useQueryClient()
   const { member, isAuthenticated } = useAuthStore()
   const [editing, setEditing] = useState(false)
-  const [editForm, setEditForm] = useState({ title: '', content: '' })
+  const [editForm, setEditForm] = useState({ title: '', content: '', membersOnly: false })
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [commentText, setCommentText] = useState('')
@@ -33,13 +34,13 @@ export default function ArticleDetailPage() {
     retry: false,
   })
 
-  // 비회원은 공지사항/자유게시판 글만 열람할 수 있습니다. (서버도 403으로 막습니다)
+  // 비회원은 공지사항/자유게시판 글만 열람할 수 있고, 그중 "회원 전용" 글은 서버가 403으로 막습니다.
   const guestAllowed = category === 'notice' || category === 'free'
   if (!isAuthenticated && (!guestAllowed || (error as any)?.response?.status === 403)) {
     return (
       <div className="max-w-md mx-auto text-center py-16 space-y-3">
         <p className="text-gray-700 font-medium">회원 전용 게시글입니다.</p>
-        <p className="text-sm text-gray-500">로그인 후 이용해 주세요. 비회원은 공지사항과 자유게시판만 열람할 수 있습니다.</p>
+        <p className="text-sm text-gray-500">로그인한 교우 회원만 내용을 볼 수 있습니다. 로그인 후 이용해 주세요.</p>
         <div className="flex justify-center gap-2 pt-2">
           <Link to="/login" className="bg-crimson text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-crimson-800">로그인</Link>
           <Link to="/community/notice" className="text-sm px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50">공지사항 보기</Link>
@@ -56,7 +57,7 @@ export default function ArticleDetailPage() {
   const canSocial = article.category === 'FREE' || article.category === 'STORY'
 
   const startEditing = () => {
-    setEditForm({ title: article.title, content: article.content })
+    setEditForm({ title: article.title, content: article.content, membersOnly: article.membersOnly })
     setEditing(true)
   }
 
@@ -137,7 +138,10 @@ export default function ArticleDetailPage() {
       {!editing ? (
         <>
           <div className="flex items-start justify-between mt-3 mb-2 gap-3">
-            <h1 className="text-2xl font-bold text-gray-800">{article.title}</h1>
+            <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+              {article.membersOnly && <MembersOnlyBadge />}
+              {article.title}
+            </h1>
             {canModify && (
               <div className="flex gap-2 shrink-0 pt-1">
                 <button onClick={startEditing} className="text-xs text-crimson font-medium hover:underline">
@@ -169,6 +173,13 @@ export default function ArticleDetailPage() {
             onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
             onPaste={onEditPaste}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          {(article.category === 'NOTICE' || article.category === 'FREE') && (
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input type="checkbox" checked={editForm.membersOnly}
+                onChange={(e) => setEditForm({ ...editForm, membersOnly: e.target.checked })} />
+              회원 전용 <span className="text-xs text-gray-400">(비회원에게는 제목만 보이고, 내용은 로그인해야 볼 수 있습니다)</span>
+            </label>
+          )}
           <div className="flex gap-2">
             <button type="submit" disabled={saving}
               className="bg-crimson text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-crimson-800 disabled:opacity-50">

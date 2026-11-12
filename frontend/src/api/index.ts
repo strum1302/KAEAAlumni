@@ -88,9 +88,9 @@ export const articlesApi = {
   getList: (params?: { category?: string; page?: number; pageSize?: number }) =>
     api.get('/articles', { params }),
   getById: (id: string) => api.get(`/articles/${id}`),
-  create: (data: { category: string; title: string; content: string; authorName: string }) =>
+  create: (data: { category: string; title: string; content: string; authorName: string; membersOnly?: boolean }) =>
     api.post('/articles', data),
-  update: (id: string, data: { title: string; content: string }) =>
+  update: (id: string, data: { title: string; content: string; membersOnly?: boolean }) =>
     api.put(`/articles/${id}`, data),
   delete: (id: string) => api.delete(`/articles/${id}`),
   addComment: (id: string, data: { authorName: string; content: string }) =>

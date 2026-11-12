@@ -7,6 +7,7 @@ import { articlesApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import { fileToResizedDataUrl } from '../utils/image'
 import { useTableEditing, TableInsertButton } from '../components/common/TableTools'
+import MembersOnlyBadge from '../components/common/MembersOnlyBadge'
 import Pagination from '../components/common/Pagination'
 import SubPageBanner from '../components/SubPageBanner'
 import type { ArticleCategory, ArticleList, PagedResult } from '../types'
@@ -36,7 +37,7 @@ export default function CommunityPage() {
   const navigate = useNavigate()
   const { isAuthenticated, member } = useAuthStore()
   const [showWrite, setShowWrite] = useState(false)
-  const [form, setForm] = useState({ title: '', content: '' })
+  const [form, setForm] = useState({ title: '', content: '', membersOnly: false })
   const [page, setPage] = useState(1)
   const [insertingImage, setInsertingImage] = useState(false)
   const contentRef = useRef<HTMLTextAreaElement>(null)
@@ -48,6 +49,9 @@ export default function CommunityPage() {
   const canWrite = activeCategory === 'ALL'
     ? false
     : (activeCategory === 'STORY' || activeCategory === 'FREE') ? isAuthenticated : canWriteNotice
+
+  // "회원 전용" 옵션은 비회원도 볼 수 있는 게시판(공지사항/자유게시판)에서만 의미가 있습니다.
+  const canSetMembersOnly = activeCategory === 'NOTICE' || activeCategory === 'FREE'
 
   useEffect(() => setPage(1), [activeCategory])
 
@@ -94,10 +98,11 @@ export default function CommunityPage() {
       const authorName = member ? `${member.name} (${member.entryYear} ${member.major})` : '익명'
       await articlesApi.create({
         category: activeCategory, title: form.title, content: form.content, authorName,
+        membersOnly: canSetMembersOnly && form.membersOnly,
       })
       toast.success('등록되었습니다.')
       setShowWrite(false)
-      setForm({ title: '', content: '' })
+      setForm({ title: '', content: '', membersOnly: false })
       refetch()
     } catch (err: any) {
       toast.error(err?.response?.data?.message || '등록에 실패했습니다.')
@@ -167,6 +172,13 @@ export default function CommunityPage() {
             onChange={(e) => setForm({ ...form, content: e.target.value })}
             onPaste={onContentPaste}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+          {canSetMembersOnly && (
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input type="checkbox" checked={form.membersOnly}
+                onChange={(e) => setForm({ ...form, membersOnly: e.target.checked })} />
+              회원 전용 <span className="text-xs text-gray-400">(비회원에게는 제목만 보이고, 내용은 로그인해야 볼 수 있습니다)</span>
+            </label>
+          )}
           <button type="submit" className="bg-crimson text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-crimson-800">
             등록
           </button>
@@ -184,6 +196,7 @@ export default function CommunityPage() {
                     {CATEGORY_LABELS[a.category]}
                   </span>
                 )}
+                {a.membersOnly && <MembersOnlyBadge />}
                 <span className="truncate">{a.title}</span>
               </span>
               <span className="flex items-center gap-1.5 text-xs text-gray-400 shrink-0">

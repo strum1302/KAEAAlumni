@@ -107,6 +107,7 @@ public class AppDbContext : DbContext
             e.Property(a => a.AuthorName).HasColumnName("author_name").HasMaxLength(100);
             e.Property(a => a.AuthorId).HasColumnName("author_id");
             e.Property(a => a.ViewCount).HasColumnName("view_count");
+            e.Property(a => a.MembersOnly).HasColumnName("members_only");
             e.Property(a => a.CreatedAt).HasColumnName("created_at");
         });
 

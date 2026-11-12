@@ -81,6 +81,7 @@ export interface ArticleList {
   commentCount: number
   likeCount: number
   createdAt: string
+  membersOnly: boolean
 }
 
 export interface ArticleComment {

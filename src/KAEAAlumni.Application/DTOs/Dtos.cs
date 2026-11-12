@@ -90,7 +90,8 @@ public record ArticleListDto(
     int ViewCount,
     int CommentCount,
     int LikeCount,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    bool MembersOnly
 );
 
 public record ArticleDetailDto(
@@ -105,19 +106,22 @@ public record ArticleDetailDto(
     bool LikedByMe,
     DateTime CreatedAt,
     List<GalleryItemDto> GalleryItems,
-    List<ArticleCommentDto> Comments
+    List<ArticleCommentDto> Comments,
+    bool MembersOnly
 );
 
 public record CreateArticleDto(
     string Category,
     string Title,
     string Content,
-    string AuthorName
+    string AuthorName,
+    bool MembersOnly = false
 );
 
 public record UpdateArticleDto(
     string Title,
-    string Content
+    string Content,
+    bool? MembersOnly = null   // null이면 기존 값 유지
 );
 
 // ── ArticleComment (자유게시판/우리 이야기 전용) ──────────

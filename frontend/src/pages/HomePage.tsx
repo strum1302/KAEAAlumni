@@ -8,6 +8,7 @@ import { getGoogleMapsLink } from '../utils/maps'
 import CampusHero from '../components/CampusHero'
 import { useAuthStore } from '../store/authStore'
 import type { EventList, ArticleList, GalleryItem, PagedResult } from '../types'
+import MembersOnlyBadge from '../components/common/MembersOnlyBadge'
 
 // 히어로에 쓸 캠퍼스 사진 9장 (사계절 + 응원전 분위기가 고루 섞이도록 27장 중 선별).
 // 나머지 사진들은 public/images/hero/에 그대로 남아있으니, 나중에 갤러리 "고려대 캠퍼스"
@@ -124,7 +125,10 @@ export default function HomePage() {
             {notices?.items.map((a) => (
               <li key={a.id}>
                 <Link to={`/community/notice/${a.id}`} className="flex items-center justify-between gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-crimson-50">
-                  <span className="truncate">{a.title}</span>
+                  <span className="truncate flex items-center gap-2">
+                    {a.membersOnly && <MembersOnlyBadge />}
+                    <span className="truncate">{a.title}</span>
+                  </span>
                   <span className="text-xs text-gray-400 shrink-0">{a.authorName}</span>
                 </Link>
               </li>
