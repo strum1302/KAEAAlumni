@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import { articlesApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import ArticleContent from '../components/common/ArticleContent'
+import { useTableEditing, TableInsertButton } from '../components/common/TableTools'
 import type { ArticleDetail } from '../types'
 
 export default function ArticleDetailPage() {
@@ -20,6 +21,10 @@ export default function ArticleDetailPage() {
   const [commentText, setCommentText] = useState('')
   const [postingComment, setPostingComment] = useState(false)
   const [likeBusy, setLikeBusy] = useState(false)
+  const editContentRef = useRef<HTMLTextAreaElement>(null)
+  // 수정 화면에서도 엑셀 표 붙여넣기 자동 변환 + "표 삽입" 버튼을 쓸 수 있게 합니다.
+  const { onPaste: onEditPaste, insertTable } = useTableEditing(
+    editContentRef, editForm.content, (content) => setEditForm((f) => ({ ...f, content })))
 
   const { data: article, refetch, error } = useQuery({
     queryKey: ['article', id],
@@ -156,8 +161,13 @@ export default function ArticleDetailPage() {
           <input required value={editForm.title}
             onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-          <textarea required rows={8} value={editForm.content}
+          <div className="flex items-center gap-2">
+            <TableInsertButton onInsert={insertTable} />
+            <span className="text-xs text-gray-400">엑셀 표를 복사해 붙여넣으면 자동으로 표가 됩니다.</span>
+          </div>
+          <textarea ref={editContentRef} required rows={8} value={editForm.content}
             onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
+            onPaste={onEditPaste}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
           <div className="flex gap-2">
             <button type="submit" disabled={saving}

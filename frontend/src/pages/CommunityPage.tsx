@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import { articlesApi } from '../api'
 import { useAuthStore } from '../store/authStore'
 import { fileToResizedDataUrl } from '../utils/image'
+import { useTableEditing, TableInsertButton } from '../components/common/TableTools'
 import Pagination from '../components/common/Pagination'
 import SubPageBanner from '../components/SubPageBanner'
 import type { ArticleCategory, ArticleList, PagedResult } from '../types'
@@ -57,6 +58,10 @@ export default function CommunityPage() {
     })).data as PagedResult<ArticleList>,
     enabled: !guestBlocked,
   })
+
+  // 엑셀 표 붙여넣기 자동 변환 + "표 삽입" 버튼
+  const { onPaste: onContentPaste, insertTable } = useTableEditing(
+    contentRef, form.content, (content) => setForm((f) => ({ ...f, content })))
 
   // 커서 위치에 사진을 삽입합니다. 본문 텍스트 안에 [[img:...]] 마커로 끼워 넣고,
   // 상세 페이지에서는 이 마커를 실제 사진으로 바꿔서 보여줍니다.
@@ -155,10 +160,12 @@ export default function CommunityPage() {
                   e.target.value = ''
                 }} />
             </label>
-            <span className="text-xs text-gray-400">커서 위치에 사진이 삽입됩니다.</span>
+            <TableInsertButton onInsert={insertTable} />
+            <span className="text-xs text-gray-400">커서 위치에 삽입됩니다. 엑셀 표를 복사해 붙여넣으면 자동으로 표가 됩니다.</span>
           </div>
           <textarea ref={contentRef} required rows={8} placeholder="내용" value={form.content}
             onChange={(e) => setForm({ ...form, content: e.target.value })}
+            onPaste={onContentPaste}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
           <button type="submit" className="bg-crimson text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-crimson-800">
             등록
